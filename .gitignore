@@ -1,0 +1,25 @@
+# Build output
+/build/
+/build-*/
+/out/
+
+# Packaged releases (published as GitHub release assets instead)
+/release/
+
+# Logs and local settings
+error.log
+*.log
+settings.ini
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.user.*
+CMakeUserPresets.json
+
+# Operating system cruft
+Thumbs.db
+Desktop.ini
+.DS_Store

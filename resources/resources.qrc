@@ -1,0 +1,45 @@
+<RCC>
+  <qresource prefix="/">
+    <file>app.png</file>
+    <file>app.ico</file>
+
+    <file>icons/ban-2x.png</file>
+    <file>icons/ban-2x_w.png</file>
+    <file>icons/bar-chart-2x.png</file>
+    <file>icons/bar-chart-2x_w.png</file>
+    <file>icons/check-2x.png</file>
+    <file>icons/check-2x_w.png</file>
+    <file>icons/cog-2x.png</file>
+    <file>icons/cog-2x_w.png</file>
+    <file>icons/document-2x.png</file>
+    <file>icons/document-2x_w.png</file>
+    <file>icons/eye-2x.png</file>
+    <file>icons/eye-2x_w.png</file>
+    <file>icons/globe-2x.png</file>
+    <file>icons/globe-2x_w.png</file>
+    <file>icons/info-2x.png</file>
+    <file>icons/info-2x_w.png</file>
+    <file>icons/lock-locked-2x.png</file>
+    <file>icons/lock-locked-2x_w.png</file>
+    <file>icons/media-pause-2x.png</file>
+    <file>icons/media-pause-2x_w.png</file>
+    <file>icons/media-pause.png</file>
+    <file>icons/media-pause_w.png</file>
+    <file>icons/media-play-2x.png</file>
+    <file>icons/media-play-2x_w.png</file>
+    <file>icons/media-play.png</file>
+    <file>icons/media-play_w.png</file>
+    <file>icons/media-step-forward-2x.png</file>
+    <file>icons/media-step-forward-2x_w.png</file>
+    <file>icons/media-step-forward.png</file>
+    <file>icons/media-step-forward_w.png</file>
+    <file>icons/power-standby-2x.png</file>
+    <file>icons/power-standby-2x_w.png</file>
+    <file>icons/trash-2x.png</file>
+    <file>icons/trash-2x_w.png</file>
+    <file>icons/x-2x.png</file>
+    <file>icons/x-2x_w.png</file>
+    <file>icons/select2-spinner.gif</file>
+    <file>icons/select2-spinner_inverted.gif</file>
+  </qresource>
+</RCC>
