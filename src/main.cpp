@@ -70,13 +70,50 @@ int main(int argc, char* argv[])
     GuardedApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("Copper Steam Idler"));
     QCoreApplication::setApplicationName(QStringLiteral("CopperSteamIdler"));
-    QCoreApplication::setApplicationVersion(QStringLiteral("0.2.1"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("0.3.0"));
     QApplication::setQuitOnLastWindowClosed(false);
 
     qInstallMessageHandler(messageHandler);
 
     // Migrate older settings layouts once.
     Settings::instance().upgrade();
+
+    const QString appDir = QCoreApplication::applicationDirPath();
+
+    // i18n: restore the saved interface language (an empty setting means
+    // "follow the operating system"). QTranslator's QLocale overload handles
+    // the usual fallbacks (fr_FR -> fr, pt_BR -> pt) that a plain file-name
+    // lookup would miss.
+    const QString language = Settings::instance().language();
+    const QLocale locale(language.isEmpty() ? QLocale::system().name() : language);
+    QLocale::setDefault(locale);
+    // Right-to-left languages (Arabic) must mirror the whole interface.
+    QApplication::setLayoutDirection(locale.textDirection());
+
+    QTranslator appTranslator;
+    const QStringList appI18nDirs{appDir + QStringLiteral("/i18n"), QStringLiteral(":/i18n")};
+    for (const QString& dir : appI18nDirs) {
+        if (appTranslator.load(locale, QStringLiteral("copper"), QStringLiteral("_"), dir)) {
+            app.installTranslator(&appTranslator);
+            Logger::log(QStringLiteral("Loaded application translations for '%1'.")
+                            .arg(locale.name()));
+            break;
+        }
+    }
+
+    // Qt's own catalogues (standard dialog buttons, text-field context menus,
+    // ...) are not shipped by windeployqt --no-translations, so look next to
+    // the executable first and fall back to the Qt installation when running
+    // from a development build.
+    QTranslator qtTranslator;
+    const QStringList qtTranslationDirs{appDir + QStringLiteral("/translations"),
+                                        QLibraryInfo::path(QLibraryInfo::TranslationsPath)};
+    for (const QString& dir : qtTranslationDirs) {
+        if (qtTranslator.load(locale, QStringLiteral("qtbase"), QStringLiteral("_"), dir)) {
+            app.installTranslator(&qtTranslator);
+            break;
+        }
+    }
 
     // Avoid two instances fighting over the same helper processes.
     QLockFile lock(Settings::dataDirectory() + QStringLiteral("/copper.lock"));
@@ -88,7 +125,6 @@ int main(int argc, char* argv[])
     }
 
     // Verify runtime dependencies next to the executable.
-    const QString appDir = QCoreApplication::applicationDirPath();
     QStringList missing;
     if (!QFileInfo::exists(appDir + QStringLiteral("/copper-steam-idle.exe")))
         missing << QStringLiteral("copper-steam-idle.exe");
@@ -100,16 +136,6 @@ int main(int argc, char* argv[])
             QObject::tr("These required files are missing next to the application:\n%1\n\n"
                         "Reinstall or run the deploy step.")
                 .arg(missing.join(QStringLiteral("\n"))));
-    }
-
-    // i18n: load i18n/copper_<locale>.qm when a catalogue exists.
-    QTranslator translator;
-    const QString language = Settings::instance().language();
-    const QString locale = language.isEmpty() ? QLocale::system().name() : language;
-    const QString i18nDir = appDir + QStringLiteral("/i18n");
-    if (translator.load(QStringLiteral("copper_") + locale, i18nDir)
-        || translator.load(QStringLiteral(":/i18n/copper_") + locale)) {
-        app.installTranslator(&translator);
     }
 
     MainWindow window;

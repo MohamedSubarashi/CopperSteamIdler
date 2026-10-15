@@ -11,6 +11,9 @@ error.log
 *.log
 settings.ini
 
+# Translation build artefacts (the .ts catalogues are the source of truth)
+/i18n/*.qm
+
 # IDE / editor
 .vs/
 .vscode/

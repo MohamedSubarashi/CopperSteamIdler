@@ -5,8 +5,8 @@ IDI_ICON1 ICON "app.ico"
    when <windows.h> is included; without it windres stores a string id that
    Windows/.NET cannot read, leaving the file version blank in Explorer. */
 1 VERSIONINFO
-FILEVERSION 0,2,1,0
-PRODUCTVERSION 0,2,1,0
+FILEVERSION 0,3,0,0
+PRODUCTVERSION 0,3,0,0
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS 0x40004L
@@ -19,11 +19,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Copper Steam Idler"
             VALUE "FileDescription", "Copper Steam Idler"
-            VALUE "FileVersion", "0.2.1.0"
+            VALUE "FileVersion", "0.3.0.0"
             VALUE "InternalName", "CopperSteamIdler"
             VALUE "OriginalFilename", "CopperSteamIdler.exe"
             VALUE "ProductName", "Copper Steam Idler"
-            VALUE "ProductVersion", "0.2.1.0"
+            VALUE "ProductVersion", "0.3.0.0"
         END
     END
     BLOCK "VarFileInfo"

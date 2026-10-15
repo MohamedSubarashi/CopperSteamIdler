@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(CopperSteamIdler
-    VERSION 0.2.1
+    VERSION 0.3.0
     DESCRIPTION "Copper Steam Idler - a Qt6 port of Idle Master Extended"
     LANGUAGES CXX)
 
@@ -142,12 +142,23 @@ add_executable(${HELPER_NAME} WIN32 src/helper/steam_idle_main.cpp)
 
 # ---------------------------------------------------------------------------
 # Translations (optional): drop .ts files into i18n/ to build .qm catalogues.
+#
+# IMMEDIATE_CALL is required here: without it qt_add_translations serializes
+# its arguments into a cmake_language(EVAL CODE "...") string to defer itself
+# to the end of the project scope, and that re-parse splits arguments on
+# whitespace. This project path contains a space ("Copper Steam Idler"), which
+# turned "…/Copper Steam Idler/…" into the bogus target name "Steam" and made
+# configuration fail. SOURCE_TARGETS keeps lupdate scoped to the GUI target so
+# the helper (plain Win32, no tr()) is never scanned.
 # ---------------------------------------------------------------------------
 file(GLOB _ts_files "${CMAKE_CURRENT_SOURCE_DIR}/i18n/*.ts")
 if(_ts_files)
     find_package(Qt6 QUIET COMPONENTS LinguistTools)
     if(TARGET Qt6::lrelease)
-        qt_add_translations(${APP_NAME} TS_FILES ${_ts_files})
+        qt_add_translations(${APP_NAME}
+            TS_FILES ${_ts_files}
+            SOURCE_TARGETS ${APP_NAME}
+            IMMEDIATE_CALL)
     endif()
 endif()
 

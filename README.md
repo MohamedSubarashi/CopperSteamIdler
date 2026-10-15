@@ -119,6 +119,9 @@ before the user is prompted to sign in again.
   dark theme with white icon variants, minimize-to-tray and prevent-sleep.
 - When idling completes: do nothing, **shut down**, **sleep** or **hibernate**.
 - Session + lifetime statistics.
+- **Interface languages**: English, Français, Español, Português (Brasil) and
+  العربية (full right-to-left mirroring), plus *System default* which follows
+  the OS locale.
 
 ## Robustness notes
 
@@ -137,15 +140,41 @@ Several long-standing upstream issues are addressed at the application level:
 
 ## Translations
 
-All user-facing strings use `tr()`. To add a language, copy the source catalog
-into `i18n/` and translate it:
+All user-facing strings use `tr()`. The interface is available in:
+
+| Language | Code | Catalogue |
+| --- | --- | --- |
+| English | `en` | `i18n/copper_en.ts` |
+| Français | `fr` | `i18n/copper_fr.ts` |
+| Español | `es` | `i18n/copper_es.ts` |
+| Português (Brasil) | `pt_BR` | `i18n/copper_pt_BR.ts` |
+| العربية (RTL) | `ar` | `i18n/copper_ar.ts` |
+
+Pick **Settings → Interface Language**. The first entry, *System default*,
+follows the operating system locale; changing the language requires a restart.
+
+English is the source language, so `copper_en.ts` simply repeats the sources —
+it exists so a user who forces `en` sees identical text regardless of the OS
+locale.
+
+App catalogues are compiled by `qt_add_translations` and embedded in the
+executable under the Qt resource prefix `:/i18n`, so they need no files on
+disk. Qt's own catalogue (`qtbase_*.qm`, standard button labels and context
+menus) is *not* bundled by `windeployqt --no-translations`, so the
+`translations/` folder next to the executable is shipped with the
+`qtbase_{en,es,fr,pt_BR,ar}.qm` files and loaded at startup.
+
+To add a language:
 
 ```powershell
 lupdate src -ts i18n/copper_de.ts
 ```
 
-Then build — any `i18n/*.ts` files are compiled to `.qm` automatically and
-loaded at startup based on the saved `language` setting.
+Translate the `.ts`, add the language code to the combo box in
+`src/ui/SettingsDialog.cpp`, and drop the matching `qtbase_de.qm` from
+`C:\Qt\<version>\mingw_64\translations\` into the shipped `translations/`
+folder. Then build — every `i18n/*.ts` file is compiled to a `.qm`
+automatically.
 
 ## Directory layout
 

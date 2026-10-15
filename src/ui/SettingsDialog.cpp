@@ -62,10 +62,22 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     auto* langRow = new QHBoxLayout;
     langRow->addWidget(new QLabel(tr("Interface Language"), general));
     m_cboLanguage = new QComboBox(general);
+    // Language code -> native name. An empty code means "follow the operating
+    // system", which is also what an unset setting resolves to.
+    m_cboLanguage->addItem(tr("System default"), QStringLiteral(""));
     m_cboLanguage->addItem(QStringLiteral("English"), QStringLiteral("en"));
+    m_cboLanguage->addItem(QStringLiteral("Français"), QStringLiteral("fr"));
+    m_cboLanguage->addItem(QStringLiteral("Español"), QStringLiteral("es"));
+    m_cboLanguage->addItem(QStringLiteral("Português (Brasil)"), QStringLiteral("pt_BR"));
+    m_cboLanguage->addItem(QStringLiteral("العربية"), QStringLiteral("ar"));
     langRow->addWidget(m_cboLanguage);
     langRow->addStretch();
     generalLayout->addLayout(langRow);
+
+    auto* langNote = new QLabel(tr("A restart is required to apply a language change."), general);
+    langNote->setWordWrap(true);
+    langNote->setEnabled(false);
+    generalLayout->addWidget(langNote);
 
     // Game selection -------------------------------------------------------
     auto* selection = new QGroupBox(tr("Games to Idle"), this);
