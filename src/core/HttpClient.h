@@ -33,6 +33,12 @@ public:
     // GETs the profile and confirms the signed-in SteamID matches the cookie.
     bool isLogined(const QString& profileUrl);
 
+    // Confirms Steam actually accepts the stored session right now. Unlike
+    // isLogined() (which reads a public feed) this reads the community page's
+    // logged_in flag, so an expired token is detected instead of silently
+    // browsing as a signed-out visitor.
+    bool hasValidSession();
+
     // Sends steamRefresh_steam to Steam and persists a refreshed
     // steamLoginSecure token when one is returned.
     bool refreshLoginToken();

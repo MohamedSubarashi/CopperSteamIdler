@@ -469,10 +469,16 @@ void MainWindow::onReadyToGo()
         return;
     }
 
-    if (HttpClient::instance().isLogined(profile)) {
+    if (HttpClient::instance().hasValidSession()) {
         m_loginFailures = 0;
-        if (loadBadges())
+        if (loadBadges()) {
             startIdle();
+        } else if (!m_tmrBadgeReload->isActive()) {
+            // loadBadges() could not even start a retry (for example the badge
+            // page came back empty outside the retry path): try again shortly
+            // instead of silently stalling after the timer above was stopped.
+            m_tmrReadyToGo->start();
+        }
     } else if (HttpClient::instance().isRateLimited()) {
         m_lblCurrentStatus->setText(tr("Steam is rate limiting requests, waiting..."));
         m_tmrReadyToGo->start();
@@ -481,6 +487,8 @@ void MainWindow::onReadyToGo()
         // sign in again instead of silently failing forever.
         if (++m_loginFailures >= 3) {
             m_loginFailures = 0;
+            Logger::log(QStringLiteral("Steam session could not be validated; signing out so the "
+                                       "user can sign in again."));
             HttpClient::instance().clearCookies();
             onCheckCookieData();
             return;

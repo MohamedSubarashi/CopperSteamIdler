@@ -37,6 +37,14 @@ HttpClient::HttpClient(QObject* parent)
 {
     m_nam->setCookieJar(m_jar);
     m_jar->setParent(m_nam);
+
+    // Restore the saved Steam session up front. Without this the cookie jar
+    // starts empty on every launch, so the first badge fetch is served to a
+    // signed-out visitor: no card-drop data is returned, nothing is found to
+    // idle, and the app looks like it never re-analysed the account.
+    refreshCookies();
+    if (Settings::instance().hasSession())
+        Logger::log(QStringLiteral("Restored the saved Steam session from settings."));
 }
 
 HttpClient& HttpClient::instance()
@@ -187,6 +195,35 @@ bool HttpClient::isLogined(const QString& profileUrl)
     bool pageOk = false;
     const QString page = getSync(QUrl(profileUrl), 20000, &pageOk);
     return pageOk && page.contains(QLatin1String("notification_count"));
+}
+
+bool HttpClient::hasValidSession()
+{
+    if (steamIdFromCookie().isEmpty())
+        return false;
+
+    // Every community page carries the real authentication state in its
+    // data-userinfo blob ("logged_in":true/false). The public ?xml=1 feed is
+    // served to signed-out visitors too, so it can never tell a live session
+    // apart from an expired one -- this flag can.
+    static const QRegularExpression loggedInRe(
+        QStringLiteral("logged_in(?:&quot;|\")\\s*:\\s*(true|false)"));
+    int status = 0;
+    bool ok = false;
+    const QString page = getSync(QUrl(QStringLiteral("https://steamcommunity.com/my/")),
+                                 20000, &ok, &status);
+
+    // Ambiguous answers (rate limiting, network trouble, an unexpected page
+    // shape) must never sign the user out; only a definite "logged_in":false does.
+    if (status == 429 || isRateLimited())
+        return true;
+    if (!ok || page.isEmpty())
+        return true;
+
+    const QRegularExpressionMatch loggedIn = loggedInRe.match(page);
+    if (!loggedIn.hasMatch())
+        return true;
+    return loggedIn.captured(1) == QLatin1String("true");
 }
 
 bool HttpClient::refreshLoginToken()
