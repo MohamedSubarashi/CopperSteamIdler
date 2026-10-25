@@ -1,9 +1,8 @@
 #include "WebSocketClient.h"
 
 #include <QByteArray>
-#include <QCryptographicHash>
-#include <QHostAddress>
 #include <QRandomGenerator>
+#include <QSslSocket>
 #include <QTcpSocket>
 #include <QUrl>
 
@@ -29,9 +28,21 @@ QByteArray makeKey()
 
 WebSocketClient::WebSocketClient(QObject* parent)
     : QObject(parent)
-    , m_socket(new QTcpSocket(this))
+    , m_socket(new QSslSocket(this))
 {
-    connect(m_socket, &QTcpSocket::connected, this, &WebSocketClient::onConnected);
+    auto* ssl = static_cast<QSslSocket*>(m_socket);
+
+    connect(m_socket, &QTcpSocket::connected, this, [this]() {
+        // For wss:// the HTTP upgrade must wait until the TLS handshake is done;
+        // QSslSocket emits connected() for the TCP connection before that.
+        if (!m_useTls)
+            onConnected();
+    });
+    connect(ssl, &QSslSocket::encrypted, this, &WebSocketClient::onConnected);
+    connect(ssl, &QSslSocket::sslErrors, this, [this](const QList<QSslError>& errors) {
+        if (!m_handshakeDone && !errors.isEmpty())
+            emit failed(errors.first().errorString());
+    });
     connect(m_socket, &QTcpSocket::readyRead, this, &WebSocketClient::onReadyRead);
     connect(m_socket, &QTcpSocket::disconnected, this, [this]() {
         if (m_handshakeDone) {
@@ -39,12 +50,7 @@ WebSocketClient::WebSocketClient(QObject* parent)
             emit closed();
         }
     });
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(m_socket, &QAbstractSocket::errorOccurred, this, &WebSocketClient::onSocketError);
-#else
-    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),
-            this, &WebSocketClient::onSocketError);
-#endif
 }
 
 void WebSocketClient::open(const QUrl& url)
@@ -53,14 +59,21 @@ void WebSocketClient::open(const QUrl& url)
     m_handshakeDone = false;
     m_messageBuffer.clear();
     m_messageInProgress = false;
+    m_messageOpcode = 0;
+
+    m_useTls = url.scheme().compare(QLatin1String("wss"), Qt::CaseInsensitive) == 0;
 
     m_path = url.path().isEmpty() ? QStringLiteral("/") : url.path();
     if (url.hasQuery())
         m_path += QLatin1Char('?') + url.query();
-    m_hostHeader = url.host() + QLatin1Char(':') + QString::number(url.port(80));
+    const int defaultPort = m_useTls ? 443 : 80;
+    m_hostHeader = url.host() + QLatin1Char(':') + QString::number(url.port(defaultPort));
 
-    const quint16 port = static_cast<quint16>(url.port(80));
-    m_socket->connectToHost(url.host(), port);
+    const quint16 port = static_cast<quint16>(url.port(defaultPort));
+    if (m_useTls)
+        static_cast<QSslSocket*>(m_socket)->connectToHostEncrypted(url.host(), port);
+    else
+        m_socket->connectToHost(url.host(), port);
 }
 
 void WebSocketClient::onConnected()
@@ -178,19 +191,29 @@ void WebSocketClient::handleMessageFrame(quint8 opcode, bool fin, const QByteArr
         m_messageOpcode = opcode;
 
     m_messageBuffer += payload;
+    m_messageInProgress = !fin;
 
     if (!fin)
         return;
 
     if (m_messageOpcode == 0x1)
         emit textMessage(QString::fromUtf8(m_messageBuffer));
+    else if (m_messageOpcode == 0x2)
+        emit binaryMessage(m_messageBuffer);
+
     m_messageBuffer.clear();
     m_messageOpcode = 0;
+    m_messageInProgress = false;
 }
 
 void WebSocketClient::sendText(const QString& text)
 {
     sendFrame(0x1, text.toUtf8());
+}
+
+void WebSocketClient::sendBinary(const QByteArray& payload)
+{
+    sendFrame(0x2, payload);
 }
 
 void WebSocketClient::sendFrame(quint8 opcode, const QByteArray& payload)

@@ -6,9 +6,12 @@
 
 class QTcpSocket;
 
-// Minimal RFC 6455 WebSocket client (text frames only, client-side masking).
-// Sufficient for talking to the local Chrome/Edge DevTools endpoint, so we do
-// not depend on Qt WebSockets being installed.
+// Minimal RFC 6455 WebSocket client (client-side masking, text and binary
+// frames, ws:// and wss://).
+//
+// Deliberately hand-rolled instead of depending on the optional Qt WebSockets
+// module. It talks to the local Chrome/Edge DevTools endpoint for login, and to
+// Steam's CM servers for standalone idling, which exchanges binary frames.
 class WebSocketClient : public QObject
 {
     Q_OBJECT
@@ -17,6 +20,7 @@ public:
 
     void open(const QUrl& url);
     void sendText(const QString& text);
+    void sendBinary(const QByteArray& payload);
     void close();
 
     bool isConnected() const { return m_handshakeDone; }
@@ -24,6 +28,7 @@ public:
 signals:
     void opened();
     void textMessage(const QString& message);
+    void binaryMessage(const QByteArray& payload);
     void closed();
     void failed(const QString& reason);
 
@@ -43,6 +48,7 @@ private:
     QByteArray m_messageBuffer;
     bool m_messageInProgress = false;
     quint8 m_messageOpcode = 0;
+    bool m_useTls = false;
     QString m_path;
     QString m_hostHeader;
 };

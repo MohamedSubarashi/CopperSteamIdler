@@ -47,6 +47,10 @@ set(APP_SOURCES
     src/core/HttpClient.cpp
     src/core/WebSocketClient.h
     src/core/WebSocketClient.cpp
+    src/core/SteamProto.h
+    src/core/SteamProto.cpp
+    src/core/SteamCmClient.h
+    src/core/SteamCmClient.cpp
     src/core/SteamHtml.h
     src/core/SteamHtml.cpp
     src/core/ProcessManager.h
@@ -89,6 +93,7 @@ target_link_libraries(${APP_NAME} PRIVATE
     Qt6::Network
     Qt6::Svg
     Qt6::Sql
+    z
 )
 
 if(WIN32)
@@ -139,6 +144,26 @@ endif()
 # Idle helper (loads steam_api64.dll at runtime, no Qt / no Steamworks SDK)
 # ---------------------------------------------------------------------------
 add_executable(${HELPER_NAME} WIN32 src/helper/steam_idle_main.cpp)
+
+# ---------------------------------------------------------------------------
+# Developer tool: console probe for the standalone CM protocol.
+# Not shipped; enable with -DCSI_BUILD_CM_PROBE=ON.
+# ---------------------------------------------------------------------------
+option(CSI_BUILD_CM_PROBE "Build the Steam CM protocol probe" OFF)
+if(CSI_BUILD_CM_PROBE)
+    add_executable(cmprobe
+        src/tools/cmprobe.cpp
+        src/core/SteamProto.h
+        src/core/SteamProto.cpp
+        src/core/SteamCmClient.h
+        src/core/SteamCmClient.cpp
+        src/core/WebSocketClient.h
+        src/core/WebSocketClient.cpp
+        src/core/Logger.h
+        src/core/Logger.cpp)
+    target_link_libraries(cmprobe PRIVATE Qt6::Core Qt6::Network z)
+    target_include_directories(cmprobe PRIVATE src/core)
+endif()
 
 # ---------------------------------------------------------------------------
 # Translations (optional): drop .ts files into i18n/ to build .qm catalogues.
