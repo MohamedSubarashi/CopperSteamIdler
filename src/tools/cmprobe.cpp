@@ -9,6 +9,7 @@
 // or, to verify only the transport:  cmprobe --seconds 8
 
 #include "Logger.h"
+#include "SteamAuth.h"
 #include "SteamCmClient.h"
 
 #include <QCommandLineParser>
@@ -61,16 +62,34 @@ int main(int argc, char** argv)
         QStringLiteral("How long to stay connected before exiting."),
         QStringLiteral("n"),
         QStringLiteral("15"));
+    const QCommandLineOption sessionOption(
+        QStringLiteral("from-session"),
+        QStringLiteral("Mint an access token from the saved Steam session."));
 
     parser.addOption(tokenOption);
     parser.addOption(steamIdOption);
     parser.addOption(appOption);
     parser.addOption(secondsOption);
+    parser.addOption(sessionOption);
     parser.process(app);
 
-    const QString token = parser.value(tokenOption);
-    const quint64 steamId = parser.value(steamIdOption).toULongLong();
+    QString token = parser.value(tokenOption);
+    quint64 steamId = parser.value(steamIdOption).toULongLong();
     const int seconds = qMax(1, parser.value(secondsOption).toInt());
+
+    if (parser.isSet(sessionOption)) {
+        report(QStringLiteral("minting a token from the saved Steam session..."));
+        const SteamAuth::Token minted = SteamAuth::fetchToken();
+        if (!minted.isValid()) {
+            report(QStringLiteral("[auth] failed: %1").arg(minted.error));
+            return 1;
+        }
+        token = minted.accessToken;
+        steamId = minted.steamId;
+        report(QStringLiteral("[auth] token acquired for SteamID %1 (%2 chars)")
+                   .arg(steamId)
+                   .arg(token.size()));
+    }
 
     QList<quint32> apps;
     for (const QString& value : parser.values(appOption))

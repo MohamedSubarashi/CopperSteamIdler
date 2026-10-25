@@ -51,6 +51,8 @@ set(APP_SOURCES
     src/core/SteamProto.cpp
     src/core/SteamCmClient.h
     src/core/SteamCmClient.cpp
+    src/core/SteamAuth.h
+    src/core/SteamAuth.cpp
     src/core/SteamHtml.h
     src/core/SteamHtml.cpp
     src/core/ProcessManager.h
@@ -157,11 +159,19 @@ if(CSI_BUILD_CM_PROBE)
         src/core/SteamProto.cpp
         src/core/SteamCmClient.h
         src/core/SteamCmClient.cpp
+        src/core/SteamAuth.h
+        src/core/SteamAuth.cpp
+        src/core/HttpClient.h
+        src/core/HttpClient.cpp
+        src/core/CookieJar.h
+        src/core/CookieJar.cpp
+        src/core/Settings.h
+        src/core/Settings.cpp
         src/core/WebSocketClient.h
         src/core/WebSocketClient.cpp
         src/core/Logger.h
         src/core/Logger.cpp)
-    target_link_libraries(cmprobe PRIVATE Qt6::Core Qt6::Network z)
+    target_link_libraries(cmprobe PRIVATE Qt6::Core Qt6::Gui Qt6::Network z)
     target_include_directories(cmprobe PRIVATE src/core)
 endif()
 
