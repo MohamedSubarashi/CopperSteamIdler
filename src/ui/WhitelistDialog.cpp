@@ -14,7 +14,7 @@
 WhitelistDialog::WhitelistDialog(QWidget* parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Manage Idle Master Whitelist"));
+    setWindowTitle(tr("Manage Copper Steam Idler Whitelist"));
     setWindowIcon(Theme::appIcon());
     setModal(true);
 

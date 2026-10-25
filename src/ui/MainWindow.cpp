@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget* parent)
     applyIcons();
 
     m_lblSteamStatus->setText(tr("Steam is not running"));
-    m_lblCookieStatus->setText(tr("Idle Master is not connected to Steam"));
+    m_lblCookieStatus->setText(tr("Copper Steam Idler is not connected to Steam"));
     m_lblLatestRelease->setText(QStringLiteral("<a href=\"%1\">v%2</a>")
                                     .arg(QString::fromLatin1(kReleasesUrl),
                                          QApplication::applicationVersion()));
@@ -429,11 +429,11 @@ void MainWindow::onCheckCookieData()
     m_isCookieReady = connected;
 
     if (connected) {
-        m_lblCookieStatus->setText(tr("Idle Master is connected to Steam"));
+        m_lblCookieStatus->setText(tr("Copper Steam Idler is connected to Steam"));
         m_lblCookieStatus->setStyleSheet(QStringLiteral("color: #7ea64b;"));
         m_picCookieStatus->setPixmap(Theme::statusIcon(true).pixmap(16, 16));
     } else {
-        m_lblCookieStatus->setText(tr("Idle Master is not connected to Steam"));
+        m_lblCookieStatus->setText(tr("Copper Steam Idler is not connected to Steam"));
         m_lblCookieStatus->setStyleSheet(QString());
         m_picCookieStatus->setPixmap(Theme::statusIcon(false).pixmap(16, 16));
     }

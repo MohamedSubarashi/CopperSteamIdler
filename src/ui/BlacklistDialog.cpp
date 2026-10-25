@@ -15,7 +15,7 @@
 BlacklistDialog::BlacklistDialog(QWidget* parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Manage Idle Master Blacklist"));
+    setWindowTitle(tr("Manage Copper Steam Idler Blacklist"));
     setWindowIcon(Theme::appIcon());
     setModal(true);
 

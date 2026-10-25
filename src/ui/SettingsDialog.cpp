@@ -24,7 +24,7 @@
 SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Idle Master Settings"));
+    setWindowTitle(tr("Copper Steam Idler Settings"));
     setWindowIcon(Theme::appIcon());
     setModal(true);
 
@@ -33,7 +33,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     // General --------------------------------------------------------------
     auto* general = new QGroupBox(tr("General"), this);
     auto* generalLayout = new QVBoxLayout(general);
-    m_chkMinToTray = new QCheckBox(tr("Minimize Idle Master to system tray"), general);
+    m_chkMinToTray = new QCheckBox(tr("Minimize Copper Steam Idler to system tray"), general);
     m_chkStartMinimized = new QCheckBox(tr("Start minimized to the system tray"), general);
     m_chkIgnoreClient = new QCheckBox(tr("Ignore Steam client status"), general);
     m_chkShowUsername = new QCheckBox(tr("Show Steam username of signed on user"), general);

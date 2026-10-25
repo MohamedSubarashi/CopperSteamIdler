@@ -87,8 +87,8 @@
         <name>BlacklistDialog</name>
         <message>
             <location filename="../src/ui/BlacklistDialog.cpp" line="18" />
-            <source>Manage Idle Master Blacklist</source>
-            <translation>Gérer la liste noire d'Idle Master</translation>
+            <source>Manage Copper Steam Idler Blacklist</source>
+            <translation>Gérer la liste noire de Copper Steam Idler</translation>
         </message>
         <message>
             <location filename="../src/ui/BlacklistDialog.cpp" line="30" />
@@ -339,8 +339,8 @@
         <message>
             <location filename="../src/ui/MainWindow.cpp" line="102" />
             <location filename="../src/ui/MainWindow.cpp" line="436" />
-            <source>Idle Master is not connected to Steam</source>
-            <translation>Idle Master n'est pas connecté à Steam</translation>
+            <source>Copper Steam Idler is not connected to Steam</source>
+            <translation>Copper Steam Idler n'est pas connecté à Steam</translation>
         </message>
         <message>
             <location filename="../src/ui/MainWindow.cpp" line="150" />
@@ -494,8 +494,8 @@
         </message>
         <message>
             <location filename="../src/ui/MainWindow.cpp" line="432" />
-            <source>Idle Master is connected to Steam</source>
-            <translation>Idle Master est connecté à Steam</translation>
+            <source>Copper Steam Idler is connected to Steam</source>
+            <translation>Copper Steam Idler est connecté à Steam</translation>
         </message>
         <message>
             <location filename="../src/ui/MainWindow.cpp" line="483" />
@@ -673,8 +673,8 @@ Réinstallez ou exécutez l'étape de déploiement.</translation>
         <name>SettingsDialog</name>
         <message>
             <location filename="../src/ui/SettingsDialog.cpp" line="27" />
-            <source>Idle Master Settings</source>
-            <translation>Paramètres d'Idle Master</translation>
+            <source>Copper Steam Idler Settings</source>
+            <translation>Paramètres de Copper Steam Idler</translation>
         </message>
         <message>
             <location filename="../src/ui/SettingsDialog.cpp" line="34" />
@@ -683,8 +683,8 @@ Réinstallez ou exécutez l'étape de déploiement.</translation>
         </message>
         <message>
             <location filename="../src/ui/SettingsDialog.cpp" line="36" />
-            <source>Minimize Idle Master to system tray</source>
-            <translation>Réduire Idle Master dans la zone de notification</translation>
+            <source>Minimize Copper Steam Idler to system tray</source>
+            <translation>Réduire Copper Steam Idler dans la zone de notification</translation>
         </message>
         <message>
             <location filename="../src/ui/SettingsDialog.cpp" line="37" />
@@ -904,8 +904,8 @@ Réinstallez ou exécutez l'étape de déploiement.</translation>
         <name>WhitelistDialog</name>
         <message>
             <location filename="../src/ui/WhitelistDialog.cpp" line="17" />
-            <source>Manage Idle Master Whitelist</source>
-            <translation>Gérer la liste blanche d'Idle Master</translation>
+            <source>Manage Copper Steam Idler Whitelist</source>
+            <translation>Gérer la liste blanche de Copper Steam Idler</translation>
         </message>
         <message>
             <location filename="../src/ui/WhitelistDialog.cpp" line="29" />
