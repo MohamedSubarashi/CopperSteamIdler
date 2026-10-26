@@ -1,5 +1,6 @@
 #include "IdleBackend.h"
 
+#include "HttpClient.h"
 #include "Logger.h"
 #include "ProcessManager.h"
 #include "Settings.h"
@@ -81,6 +82,40 @@ IdleBackend::IdleBackend(QObject* parent)
         if (m_mode == Mode::Standalone && m_reconnectWanted && m_failures < kMaxConnectFailures)
             scheduleReconnect();
     });
+
+    connect(m_cm, &SteamCmClient::refreshTokenRotated, this, [](const QString& rotated) {
+        if (rotated.isEmpty())
+            return;
+        // Save immediately: Steam invalidates the previous refresh token.
+        Settings& s = Settings::instance();
+        s.setClientRefreshToken(rotated);
+        s.save();
+        Logger::log(QStringLiteral("IdleBackend: saved the renewed Steam refresh token"));
+    });
+
+    connect(m_cm, &SteamCmClient::webAccessTokenReceived, this,
+            [this](const QString& accessToken, const QString& refreshToken) {
+                if (accessToken.isEmpty()) {
+                    m_lastError = QStringLiteral(
+                        "Steam would not issue a community session for the linked account.");
+                    Logger::log(QStringLiteral("IdleBackend: %1").arg(m_lastError));
+                    emit standaloneFailed(m_lastError);
+                    return;
+                }
+
+                Settings& s = Settings::instance();
+                if (!refreshToken.isEmpty()) {
+                    // Steam rotates the long-lived token; keep the newest copy.
+                    s.setClientRefreshToken(refreshToken);
+                    m_cm->setAccessToken(refreshToken, m_cm->steamId());
+                }
+                s.setClientAccessToken(accessToken);
+                s.save();
+
+                HttpClient::instance().adoptWebSession(m_cm->steamId(), accessToken);
+                Logger::log(QStringLiteral("IdleBackend: community session ready"));
+                emit webSessionReady();
+            });
 }
 
 IdleBackend::~IdleBackend() = default;
@@ -93,9 +128,10 @@ IdleBackend::Mode IdleBackend::resolveMode()
     if (method == QLatin1String("client"))
         return Mode::Client;
 
-    // "auto": farm without the Steam client whenever a saved session makes that
-    // possible, and fall back to the helper processes otherwise.
-    return Settings::instance().hasSession() ? Mode::Standalone : Mode::Client;
+    // "auto": farm without the Steam client whenever the account has been linked
+    // through the QR sign-in, and fall back to the helper processes otherwise.
+    // A plain web session is not enough: the CM rejects website tokens.
+    return Settings::instance().hasClientToken() ? Mode::Standalone : Mode::Client;
 }
 
 void IdleBackend::setMode(Mode mode)
@@ -235,11 +271,13 @@ bool IdleBackend::ensureSession()
     if (m_connecting)
         return true;
 
-    const SteamAuth::Token token = SteamAuth::fetchToken();
-    if (!token.isValid()) {
-        m_lastError = token.error.isEmpty()
-                          ? QStringLiteral("Not signed in to Steam.")
-                          : token.error;
+    // ClientLogOn takes a refresh token in its access_token field. That token
+    // lasts for months, unlike the daily access token, so the session survives
+    // restarts without asking the user to link again.
+    const QString refreshToken = Settings::instance().clientRefreshToken();
+    const quint64 steamId = SteamAuth::steamIdFromToken(refreshToken);
+    if (refreshToken.isEmpty() || steamId == 0) {
+        m_lastError = QStringLiteral("No linked Steam account.");
         ++m_failures;
         Logger::log(QStringLiteral("IdleBackend: cannot open standalone session: %1")
                         .arg(m_lastError));
@@ -248,9 +286,31 @@ bool IdleBackend::ensureSession()
     }
 
     m_connecting = true;
-    m_cm->setAccessToken(token.accessToken, token.steamId);
+    m_cm->setRefreshToken(refreshToken, steamId);
     m_cm->connectToSteam();
     return true;
+}
+
+void IdleBackend::refreshWebSession()
+{
+    const Mode resolved = resolveMode();
+    if (resolved != Mode::Standalone)
+        return;
+
+    // The startup path can reach here before any idle cycle has run, so adopt the
+    // resolved mode instead of trusting whatever m_mode currently holds.
+    setMode(resolved);
+
+    m_reconnectWanted = true;
+
+    if (m_standaloneReady) {
+        m_cm->requestWebAccessToken();
+        return;
+    }
+
+    if (!m_reconnect->isActive())
+        m_failures = 0;
+    ensureSession();
 }
 
 void IdleBackend::scheduleReconnect()

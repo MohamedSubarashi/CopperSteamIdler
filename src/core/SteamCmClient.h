@@ -40,11 +40,25 @@ public:
     explicit SteamCmClient(QObject* parent = nullptr);
     ~SteamCmClient() override;
 
-    // Credentials: a Steam access token (JWT) and the SteamID64 it belongs to.
+    // Credentials. Steam's ClientLogon message calls this field "access_token"
+    // but actually expects a refresh token, which is what the QR sign-in
+    // returns; the client (and node-steam-user) does the same.
     void setAccessToken(const QString& token, quint64 steamId);
+
+    // Alternative credentials: a long-lived refresh token from the QR link.
+    // Steam accepts it in the logon's access-token field, and it is also what
+    // the community session is minted from. Prefer this over setAccessToken():
+    // access tokens expire within a day, refresh tokens do not.
+    void setRefreshToken(const QString& refreshToken, quint64 steamId);
 
     void connectToSteam();
     void logOff();
+
+    // Asks Steam, over the logged-on CM connection, for a short-lived access
+    // token. That token doubles as the steamLoginSecure cookie value, so this is
+    // how a standalone session gets access to the community pages. Called
+    // automatically after a successful logon.
+    void requestWebAccessToken();
 
     // Reports the given app IDs as being played, replacing any previous set.
     // Steam accepts up to 32 concurrently "played" games per session.
@@ -59,6 +73,13 @@ signals:
     void loggedOn(quint64 steamId);
     void loggedOff(int result);
     void errorOccurred(const QString& message);
+    // A fresh access token for the community site. refreshToken is Steam's
+    // rotated copy of the long-lived token and should replace the stored one.
+    // Both are empty when Steam refused the request.
+    void webAccessTokenReceived(const QString& accessToken, const QString& refreshToken);
+    // Emitted as soon as Steam rotates the long-lived token, so it can be saved
+    // even if the logon that follows fails.
+    void refreshTokenRotated(const QString& refreshToken);
     // Diagnostic: emitted for every message the CM sends us.
     void messageReceived(quint32 emsg, int bodySize);
 
@@ -78,8 +99,15 @@ private:
     void handleMessage(quint32 emsg, const QByteArray& header, const QByteArray& body);
     void handleLogonResponse(const QByteArray& body);
     void handleLoggedOff(const QByteArray& body);
+    void handleServiceMethodResponse(const QByteArray& header, const QByteArray& body);
 
     void sendMessage(quint32 emsg, const QByteArray& body);
+    void sendJob(const QString& targetJobName, const QByteArray& body, quint64 jobId,
+                 bool authenticated = true);
+
+    // Marks the session as online so the reported games are visible on the
+    // profile instead of the account showing up as offline.
+    void sendChangeStatus();
 
     static QStringList parseWebSocketServers(const QByteArray& json);
 
@@ -94,9 +122,11 @@ private:
     QString m_lastError;
 
     QString m_accessToken;
+    QString m_refreshToken;
     quint64 m_steamId = 0;
     qint32 m_sessionId = 0;
     quint64 m_jobCounter = 0;
+    quint64 m_webTokenJobId = 0;
 
     QList<quint32> m_games;
     int m_heartbeatSeconds = 9;

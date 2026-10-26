@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(CopperSteamIdler
-    VERSION 0.4.0
+    VERSION 0.5.0
     DESCRIPTION "Copper Steam Idler - a Qt6 port of Idle Master Extended"
-    LANGUAGES CXX)
+    LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -86,6 +86,13 @@ set(APP_SOURCES
     src/ui/CdpLoginDialog.cpp
     src/ui/BrowserLoginDialog.h
     src/ui/BrowserLoginDialog.cpp
+    src/ui/QrImage.h
+    src/ui/QrImage.cpp
+    src/ui/QrLoginDialog.h
+    src/ui/QrLoginDialog.cpp
+
+    src/third_party/qrcodegen/qrcodegen.h
+    src/third_party/qrcodegen/qrcodegen.c
 
     resources/resources.qrc
 )

@@ -226,61 +226,6 @@ bool HttpClient::hasValidSession()
     return loggedIn.captured(1) == QLatin1String("true");
 }
 
-bool HttpClient::refreshLoginToken()
-{
-    const QString secure = Settings::instance().steamLoginSecure();
-    if (secure.isEmpty())
-        return false;
-
-    QNetworkRequest request(QUrl(QStringLiteral(
-        "https://login.steampowered.com/jwt/refresh?redir=https%3A%2F%2Fsteamcommunity.com")));
-    request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("Mozilla/5.0 (Windows NT 10.0; Win64; x64) CopperSteamIdler/2.0"));
-    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                         QNetworkRequest::NoLessSafeRedirectPolicy);
-    request.setRawHeader("Cookie", QByteArrayLiteral("steamRefresh_steam=") + secure.toUtf8());
-
-    QNetworkReply* reply = m_nam->get(request);
-    QEventLoop loop;
-    QTimer timer;
-    timer.setSingleShot(true);
-    QObject::connect(&timer, &QTimer::timeout, &loop, [&]() {
-        if (reply->isRunning())
-            reply->abort();
-        loop.quit();
-    });
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    timer.start(20000);
-    loop.exec();
-
-    bool refreshed = false;
-    const QVariant setCookies = reply->header(QNetworkRequest::SetCookieHeader);
-    if (setCookies.isValid()) {
-        const QList<QNetworkCookie> cookies = setCookies.value<QList<QNetworkCookie>>();
-        for (const QNetworkCookie& cookie : cookies) {
-            if (cookie.name() == "steamLoginSecure") {
-                const QString value = QString::fromUtf8(cookie.value());
-                if (!value.isEmpty() && value != QLatin1String("deleted")) {
-                    Settings::instance().setSteamLoginSecure(value);
-                    Settings::instance().save();
-                    refreshCookies();
-                    refreshed = true;
-                }
-            }
-        }
-    }
-
-    const bool noError = reply->error() == QNetworkReply::NoError;
-    reply->deleteLater();
-
-    if (refreshed)
-        Logger::log(QStringLiteral("Refreshed steamLoginSecure token."));
-    else if (!noError)
-        Logger::log(QStringLiteral("Token refresh failed: %1").arg(reply->errorString()));
-
-    return refreshed;
-}
-
 void HttpClient::refreshCookies()
 {
     m_jar->refreshFromSettings();
@@ -294,4 +239,24 @@ void HttpClient::clearCookies()
     s.setSteamLoginSecure(QString());
     s.setMyProfileURL(QString());
     s.save();
+}
+
+void HttpClient::adoptWebSession(quint64 steamId, const QString& accessToken)
+{
+    if (steamId == 0 || accessToken.isEmpty())
+        return;
+
+    // Same shape the Steam client writes: "<steamid>||<access token>", encoded
+    // so the pipe characters cannot confuse the Cookie header.
+    const QString value = QString::fromUtf8(
+        QUrl::toPercentEncoding(QStringLiteral("%1||%2").arg(steamId).arg(accessToken)));
+
+    Settings& s = Settings::instance();
+    s.setSteamLoginSecure(value);
+    s.setMyProfileURL(QStringLiteral("https://steamcommunity.com/profiles/%1").arg(steamId));
+    s.save();
+
+    m_jar->refreshFromSettings();
+
+    Logger::log(QStringLiteral("Community session adopted from the linked Steam account"));
 }

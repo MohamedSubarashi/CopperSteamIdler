@@ -235,17 +235,17 @@ void CdpLoginDialog::pollCookies()
     m_ws->sendText(request);
 }
 
-QString CdpLoginDialog::extractCookie(const QByteArray& json) const
+QString CdpLoginDialog::extractCookie(const QByteArray& json, const QString& name,
+                                      const QString& domain) const
 {
     const QJsonObject root = QJsonDocument::fromJson(json).object();
     const QJsonObject result = root.value(QStringLiteral("result")).toObject();
     const QJsonArray cookies = result.value(QStringLiteral("cookies")).toArray();
     for (const QJsonValue& value : cookies) {
         const QJsonObject cookie = value.toObject();
-        if (cookie.value(QStringLiteral("name")).toString() != QLatin1String("steamLoginSecure"))
+        if (cookie.value(QStringLiteral("name")).toString() != name)
             continue;
-        if (!cookie.value(QStringLiteral("domain")).toString().contains(
-                QLatin1String("steamcommunity.com")))
+        if (!cookie.value(QStringLiteral("domain")).toString().contains(domain))
             continue;
         const QString cookieValue = cookie.value(QStringLiteral("value")).toString();
         if (cookieValue.isEmpty() || cookieValue == QLatin1String("deleted"))
@@ -257,13 +257,14 @@ QString CdpLoginDialog::extractCookie(const QByteArray& json) const
 
 void CdpLoginDialog::onSocketMessage(const QString& message)
 {
-    if (!m_cookie.isEmpty())
-        return;
-    const QString cookie = extractCookie(message.toUtf8());
-    if (cookie.isEmpty())
+    const QByteArray payload = message.toUtf8();
+    if (m_cookie.isEmpty())
+        m_cookie = extractCookie(payload, QStringLiteral("steamLoginSecure"),
+                                 QStringLiteral("steamcommunity.com"));
+
+    if (m_cookie.isEmpty())
         return;
 
-    m_cookie = cookie;
     m_status->setText(tr("Signed in. Finishing up..."));
     stopBrowser();
     accept();

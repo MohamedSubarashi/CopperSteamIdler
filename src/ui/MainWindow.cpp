@@ -7,6 +7,7 @@
 #include "../core/PowerManager.h"
 #include "../core/ProcessManager.h"
 #include "../core/Settings.h"
+#include "../core/SteamAuth.h"
 #include "../core/SteamHtml.h"
 #include "../core/SteamProfile.h"
 #include "AboutDialog.h"
@@ -14,6 +15,7 @@
 #include "BlacklistDialog.h"
 #include "BrowserLoginDialog.h"
 #include "GamesDialog.h"
+#include "QrLoginDialog.h"
 #include "SettingsDialog.h"
 #include "StatisticsDialog.h"
 #include "Theme.h"
@@ -118,8 +120,22 @@ MainWindow::MainWindow(QWidget* parent)
             [this](const QString& reason) {
                 if (m_idlingStarted)
                     return;
+                if (!SteamAuth::hasClientToken()) {
+                    m_lblCurrentStatus->setText(
+                        tr("Farming without the Steam client needs a linked account: "
+                           "use File > Link Steam Account."));
+                    return;
+                }
                 m_lblCurrentStatus->setText(tr("Could not connect to Steam: %1").arg(reason));
             });
+
+    // The linked account minted a community session over the CM connection: the
+    // badge pages can be read now, so let the idle pipeline continue.
+    connect(&IdleBackend::instance(), &IdleBackend::webSessionReady, this, [this]() {
+        onCheckCookieData();
+        if (!m_idlingStarted)
+            m_tmrReadyToGo->start();
+    });
 
     onCheckSteam();
     onCheckCookieData();
@@ -276,6 +292,7 @@ void MainWindow::buildMenus()
 {
     QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
     m_actQuickLogin = fileMenu->addAction(tr("&Sign In..."));
+    m_actLinkAccount = fileMenu->addAction(tr("Link Steam &Account..."));
     m_actSettings = fileMenu->addAction(tr("&Settings"));
     m_actBlacklist = fileMenu->addAction(tr("&Blacklist"));
     m_actWhitelist = fileMenu->addAction(tr("&Whitelist"));
@@ -302,6 +319,7 @@ void MainWindow::buildMenus()
     m_actResume->setEnabled(false);
 
     connect(m_actQuickLogin, &QAction::triggered, this, &MainWindow::onQuickLogin);
+    connect(m_actLinkAccount, &QAction::triggered, this, &MainWindow::onLinkAccount);
     connect(m_actSettings, &QAction::triggered, this, &MainWindow::onOpenSettings);
     connect(m_actBlacklist, &QAction::triggered, this, &MainWindow::onOpenBlacklist);
     connect(m_actWhitelist, &QAction::triggered, this, &MainWindow::onOpenWhitelist);
@@ -487,10 +505,25 @@ void MainWindow::onCheckCookieData()
 
 void MainWindow::onReadyToGo()
 {
-    if (!m_isSteamReady || !m_isCookieReady)
+    if (!m_isSteamReady)
         return;
     if (m_idlingStarted || m_currentBadge)
         return;
+
+    const bool standalone = IdleBackend::resolveMode() == IdleBackend::Mode::Standalone;
+
+    if (!m_isCookieReady) {
+        // A linked account can mint its own community session over the CM, so
+        // the user never has to sign in to the website. Start that session when
+        // no website cookies exist yet; webSessionReady() resumes this pipeline.
+        if (!standalone || !SteamAuth::hasClientToken())
+            return;
+
+        m_tmrReadyToGo->stop();
+        m_lblCurrentStatus->setText(tr("Connecting to Steam..."));
+        IdleBackend::instance().refreshWebSession();
+        return;
+    }
 
     m_tmrReadyToGo->stop();
 
@@ -514,8 +547,16 @@ void MainWindow::onReadyToGo()
         m_lblCurrentStatus->setText(tr("Steam is rate limiting requests, waiting..."));
         m_tmrReadyToGo->start();
     } else {
-        // Give the token refresh a couple of tries, then ask the user to
-        // sign in again instead of silently failing forever.
+        // The access token behind the cookie is short-lived. In standalone mode
+        // ask the CM for a fresh one instead of signing the user out.
+        if (standalone && SteamAuth::hasClientToken()) {
+            m_lblCurrentStatus->setText(tr("Connecting to Steam..."));
+            IdleBackend::instance().refreshWebSession();
+            return;
+        }
+
+        // Retry a couple of times before asking the user to sign in again,
+        // instead of failing silently forever.
         if (++m_loginFailures >= 3) {
             m_loginFailures = 0;
             Logger::log(QStringLiteral("Steam session could not be validated; signing out so the "
@@ -524,7 +565,6 @@ void MainWindow::onReadyToGo()
             onCheckCookieData();
             return;
         }
-        HttpClient::instance().refreshLoginToken();
         m_tmrReadyToGo->start();
     }
 }
@@ -796,6 +836,13 @@ void MainWindow::startIdle()
     backend.killRogueHelpers();
 
     if (!s.hasSession()) {
+        // Standalone idling can create its own community session from the linked
+        // account; only a client-mode run needs the user to sign in first.
+        if (mode == IdleBackend::Mode::Standalone && SteamAuth::hasClientToken()) {
+            m_lblCurrentStatus->setText(tr("Connecting to Steam..."));
+            backend.refreshWebSession();
+            return; // resumed when webSessionReady() arrives
+        }
         resetClientStatus();
         return;
     }
@@ -1305,10 +1352,11 @@ void MainWindow::onQuickLogin()
         cookie = dialog.capturedCookie();
 #else
     BrowserLoginDialog dialog(this);
-    if (dialog.exec() == QDialog::Accepted)
+    if (dialog.exec() == QDialog::Accepted) {
         cookie = dialog.capturedCookie();
-    else
+    } else {
         manual = dialog.manualRequested();
+    }
 #endif
 
     if (manual) {
@@ -1337,6 +1385,38 @@ void MainWindow::onQuickLogin()
         s.save();
         m_tmrReadyToGo->start();
     }
+}
+
+void MainWindow::onLinkAccount()
+{
+    QrLoginDialog dialog(this);
+    dialog.exec();
+
+    if (!SteamAuth::hasClientToken())
+        return;
+
+    Logger::log(QStringLiteral("Steam account linked for standalone farming."));
+
+    // Linking is only useful when farming may actually use the standalone
+    // backend; say so instead of leaving the user to guess.
+    if (Settings::instance().farmingMethod() == QLatin1String("client")) {
+        m_lblCurrentStatus->setText(
+            tr("Account linked. Set the farming method to \"Standalone\" or \"Automatic\" to "
+               "farm without the Steam client."));
+        return;
+    }
+
+    m_lblCurrentStatus->setText(tr("Account linked. Card farming can now run without the "
+                                   "Steam client."));
+
+    // If an idle cycle is already running on the helper processes, restart it so
+    // it switches to the CM session right away (the helpers need the client).
+    if (m_idlingStarted || m_currentBadge) {
+        stopIdle();
+        IdleBackend::instance().stopStandalone();
+        clearBadges();
+    }
+    m_tmrReadyToGo->start();
 }
 
 void MainWindow::onSignOut()
@@ -1470,6 +1550,7 @@ void MainWindow::applyIcons()
             action->setIcon(Theme::icon(name));
     };
     setIcon(m_actQuickLogin, QStringLiteral("account-login-2x"));
+    setIcon(m_actLinkAccount, QStringLiteral("lock-locked-2x"));
     setIcon(m_actSettings, QStringLiteral("cog-2x"));
     setIcon(m_actBlacklist, QStringLiteral("ban-2x"));
     setIcon(m_actWhitelist, QStringLiteral("check-2x"));

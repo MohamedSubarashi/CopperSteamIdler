@@ -19,7 +19,7 @@ AdvancedDialog::AdvancedDialog(QWidget* parent)
     setWindowTitle(tr("Steam Authentication"));
     setWindowIcon(Theme::appIcon());
     setModal(true);
-    resize(560, 180);
+    resize(560, 250);
 
     auto* root = new QVBoxLayout(this);
 

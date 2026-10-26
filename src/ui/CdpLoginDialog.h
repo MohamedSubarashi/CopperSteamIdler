@@ -46,7 +46,8 @@ private:
     void launchBrowser();
     void stopBrowser();
     void fail(const QString& message);
-    QString extractCookie(const QByteArray& json) const;
+    QString extractCookie(const QByteArray& json, const QString& name,
+                          const QString& domain) const;
 
     QProcess* m_process = nullptr;
     QNetworkAccessManager* m_nam = nullptr;

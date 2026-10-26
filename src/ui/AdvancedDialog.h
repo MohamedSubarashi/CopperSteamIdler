@@ -5,8 +5,9 @@
 class QLineEdit;
 class QPushButton;
 
-// Manual entry of the single Steam Community cookie that is actually needed:
-// steamLoginSecure.
+// Manual entry of the Steam Community cookie (steamLoginSecure). Only the web
+// session lives here; farming without the Steam client uses the QR sign-in
+// instead, because a website session cannot mint a client token.
 class AdvancedDialog : public QDialog
 {
     Q_OBJECT

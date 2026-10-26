@@ -39,12 +39,14 @@ public:
     // browsing as a signed-out visitor.
     bool hasValidSession();
 
-    // Sends steamRefresh_steam to Steam and persists a refreshed
-    // steamLoginSecure token when one is returned.
-    bool refreshLoginToken();
-
     void clearCookies();
     void refreshCookies();
+
+    // Builds the community session from a linked (QR) account: the Steam client
+    // uses its freshly minted access token as the steamLoginSecure cookie, which
+    // is all the community site needs for the badge pages. Also fills in the
+    // profile URL, which cannot be derived from a website cookie.
+    void adoptWebSession(quint64 steamId, const QString& accessToken);
 
     bool isRateLimited() const { return m_rateLimited; }
     void resetBackoff();

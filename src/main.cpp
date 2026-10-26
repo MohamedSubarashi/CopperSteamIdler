@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     GuardedApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("Copper Steam Idler"));
     QCoreApplication::setApplicationName(QStringLiteral("CopperSteamIdler"));
-    QCoreApplication::setApplicationVersion(QStringLiteral("0.4.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("0.5.0"));
     QApplication::setQuitOnLastWindowClosed(false);
 
     qInstallMessageHandler(messageHandler);

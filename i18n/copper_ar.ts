@@ -607,6 +607,23 @@ Please try again.</source>
             <source>No Steam client needed (standalone mode)</source>
             <translation>لا حاجة إلى عميل Steam (الوضع المستقل)</translation>
         </message>
+        <message>
+            <source>Link Steam &amp;Account...</source>
+            <translation>ربط &amp;حساب Steam...</translation>
+        </message>
+        <message>
+            <source>Account linked. Card farming can now run without the Steam client.</source>
+            <translation>تم ربط الحساب. يمكن الآن زراعة البطاقات بدون تطبيق Steam.</translation>
+        </message>
+        <message>
+            <source>Account linked. Set the farming method to "Standalone" or "Automatic" to farm without the Steam client.</source>
+            <translation>تم ربط الحساب. اختر طريقة الزراعة «مستقل» أو «تلقائي» للزراعة بدون تطبيق Steam.</translation>
+        </message>
+        <message>
+            <source>Farming without the Steam client needs a linked account: use File &gt; Link Steam Account.</source>
+            <translation>تتطلب الزراعة بدون تطبيق Steam حسابًا مرتبطًا: استخدم ملف &gt; ربط حساب Steam.</translation>
+        </message>
+
     </context>
     <context>
         <name>QObject</name>
@@ -977,6 +994,81 @@ Reinstall or run the deploy step.</source>
             <location filename="../src/ui/WhitelistDialog.cpp" line="63" />
             <source>Please enter a valid App ID.</source>
             <translation>يرجى إدخال معرّف تطبيق صالح.</translation>
+        </message>
+    </context>
+    <context>
+        <name>QrLoginDialog</name>
+        <message>
+            <source>Link Steam Account</source>
+            <translation>ربط حساب Steam</translation>
+        </message>
+        <message>
+            <source>Farm cards without the Steam client</source>
+            <translation>زراعة البطاقات بدون تطبيق Steam</translation>
+        </message>
+        <message>
+            <source>Scan this code with the Steam mobile app (Steam &gt; Sign in with QR code) and approve the sign-in. No password is stored on this computer.</source>
+            <translation>امسح هذا الرمز باستخدام تطبيق Steam على هاتفك (Steam &gt; تسجيل الدخول برمز QR) ثم وافق على تسجيل الدخول. لا تُحفظ أي كلمة مرور على هذا الكمبيوتر.</translation>
+        </message>
+        <message>
+            <source>Waiting for Steam...</source>
+            <translation>جارٍ انتظار Steam...</translation>
+        </message>
+        <message>
+            <source>&amp;Copy</source>
+            <translation>&amp;نسخ</translation>
+        </message>
+        <message>
+            <source>New Code</source>
+            <translation>رمز جديد</translation>
+        </message>
+        <message>
+            <source>&amp;Unlink</source>
+            <translation>&amp;إلغاء الربط</translation>
+        </message>
+        <message>
+            <source>&amp;Close</source>
+            <translation>&amp;إغلاق</translation>
+        </message>
+        <message>
+            <source>Contacting Steam...</source>
+            <translation>جارٍ الاتصال بـ Steam...</translation>
+        </message>
+        <message>
+            <source>Steam sent a code that could not be displayed. Try a new code.</source>
+            <translation>أرسل Steam رمزًا تعذّر عرضه. جرّب رمزًا جديدًا.</translation>
+        </message>
+        <message>
+            <source>Waiting for approval on your phone...</source>
+            <translation>جارٍ انتظار الموافقة على هاتفك...</translation>
+        </message>
+        <message>
+            <source>This code expired. Click "New Code" to try again.</source>
+            <translation>انتهت صلاحية هذا الرمز. انقر على «رمز جديد» للمحاولة مرة أخرى.</translation>
+        </message>
+        <message>
+            <source>Signed in to %1. Card farming can now run without the Steam client.</source>
+            <translation>تم تسجيل الدخول باسم %1. يمكن الآن زراعة البطاقات بدون تطبيق Steam.</translation>
+        </message>
+        <message>
+            <source>Could not finish linking with Steam. Click "New Code" to try again.</source>
+            <translation>تعذّر إكمال الربط مع Steam. انقر على «رمز جديد» لإعادة المحاولة.</translation>
+        </message>
+        <message>
+            <source>Link copied. You can also open it in the Steam app on your phone.</source>
+            <translation>تم نسخ الرابط. يمكنك أيضًا فتحه في تطبيق Steam على هاتفك.</translation>
+        </message>
+        <message>
+            <source>Unlink this account? Card farming without the Steam client will stop working until you link it again.</source>
+            <translation>إلغاء ربط هذا الحساب؟ ستتوقف زراعة البطاقات بدون تطبيق Steam حتى تربطه مرة أخرى.</translation>
+        </message>
+        <message>
+            <source>The account is no longer linked. Scan a new code to link it again.</source>
+            <translation>لم يعد الحساب مرتبطًا. امسح رمزًا جديدًا لربطه مرة أخرى.</translation>
+        </message>
+        <message>
+            <source>this account</source>
+            <translation>هذا الحساب</translation>
         </message>
     </context>
 </TS>

@@ -9,8 +9,10 @@ the same workflow, settings, idling modes and (best-effort) the same Steam
 Community scraping behaviour, while replacing the bundled .NET `steam-idle.exe`
 helper with a small native C++ helper.
 
-> **Requires** the Steam client to be running and signed in. Card drop data is
-> read from the Steam Community website using your saved login cookies.
+> **Works with or without the Steam client.** Card drop data is read from the
+> Steam Community website using your saved login. To idle without the Steam
+> client running, link your account once with a QR code (**File → Link Steam
+> Account…**) — no password is stored.
 
 ## Download
 
@@ -36,6 +38,20 @@ There is no IPC: the GUI simply launches/kills one helper process per AppID.
 Because `SteamAPI_Init` is resolved from the DLL at runtime via
 `GetProcAddress`, **no Steamworks SDK is required** — only `steam_api64.dll`
 (shipped in `libs/`).
+
+### Farming without the Steam client
+
+The GUI can also hold its own connection to Steam's CM network, so the Steam
+client does not need to be running at all. That requires a **client** token,
+which a website login cannot provide: Steam only hands one out to a client
+login. Link the account once with **File → Link Steam Account…**, approve the
+QR code in the Steam mobile app, and the returned refresh token is stored in
+`settings.ini`; short-lived access tokens are minted from it automatically
+afterwards.
+
+The farming method chooses the backend: *Automatic* (standalone when an account
+is linked, otherwise the helper processes), *Standalone*, or *Steam client*.
+The QR sign-in never sees or stores your password.
 
 ## Building
 
@@ -92,11 +108,14 @@ longer required and are stripped automatically when found.
 - **Manual entry** — pasting the `steamLoginSecure` value is always available
   via **Settings → Advanced**; it is validated against the Steam Community
   before being saved.
+- **Linking for standalone farming** — **File → Link Steam Account…** shows a
+  QR code. Scan it with the Steam mobile app and approve the sign-in; the
+  returned client refresh token is stored so cards can be farmed without the
+  Steam client. The same dialog can unlink the account again.
 
 The stored session is validated by fetching
 `/profiles/<steamid64>/?xml=1` and checking the returned SteamID matches the
-cookie. Invalid stored sessions are refreshed (via `login.steampowered.com`)
-before the user is prompted to sign in again.
+cookie. When Steam rejects it, the user is asked to sign in again.
 
 ## Feature overview
 
@@ -104,6 +123,8 @@ before the user is prompted to sign in again.
 - Automatic **Sign In** using your default browser (Firefox cookie capture), with
   a DevTools sign-in window for Chromium and an embedded WebEngine browser used
   when available.
+- **Standalone farming**: idle cards without the Steam client running, after a
+  one-time QR link (**File → Link Steam Account…**).
 - Badge list scraping with blacklist support.
 - **Game selection** (independent of strategy): all card-eligible games, a
   hand-picked list, or your **whole Steam library**.
@@ -182,6 +203,7 @@ automatically.
 src/core/    settings, logging, HTTP + cookies, HTML scraping, processes
 src/ui/      main window, dialogs, theme
 src/helper/  the native idle helper
+src/third_party/ QR code encoder (qrcodegen)
 resources/   app icon, Open Iconic assets, Qt resource file
 libs/        steam_api64.dll
 i18n/        translation catalogues

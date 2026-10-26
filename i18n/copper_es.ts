@@ -607,6 +607,23 @@ Inténtalo de nuevo.</translation>
             <source>No Steam client needed (standalone mode)</source>
             <translation>No se necesita el cliente de Steam (modo autónomo)</translation>
         </message>
+        <message>
+            <source>Link Steam &amp;Account...</source>
+            <translation>Vincular &amp;cuenta de Steam...</translation>
+        </message>
+        <message>
+            <source>Account linked. Card farming can now run without the Steam client.</source>
+            <translation>Cuenta vinculada. El farmeo de cromos ya puede funcionar sin el cliente de Steam.</translation>
+        </message>
+        <message>
+            <source>Account linked. Set the farming method to "Standalone" or "Automatic" to farm without the Steam client.</source>
+            <translation>Cuenta vinculada. Elige el método de farmeo "Autónomo" o "Automático" para farmear sin el cliente de Steam.</translation>
+        </message>
+        <message>
+            <source>Farming without the Steam client needs a linked account: use File &gt; Link Steam Account.</source>
+            <translation>Farmear sin el cliente de Steam requiere una cuenta vinculada: usa Archivo &gt; Vincular cuenta de Steam.</translation>
+        </message>
+
     </context>
     <context>
         <name>QObject</name>
@@ -977,6 +994,81 @@ Reinstala o ejecuta el paso de implementación.</translation>
             <location filename="../src/ui/WhitelistDialog.cpp" line="63" />
             <source>Please enter a valid App ID.</source>
             <translation>Introduce un ID de aplicación válido.</translation>
+        </message>
+    </context>
+    <context>
+        <name>QrLoginDialog</name>
+        <message>
+            <source>Link Steam Account</source>
+            <translation>Vincular cuenta de Steam</translation>
+        </message>
+        <message>
+            <source>Farm cards without the Steam client</source>
+            <translation>Farmear cromos sin el cliente de Steam</translation>
+        </message>
+        <message>
+            <source>Scan this code with the Steam mobile app (Steam &gt; Sign in with QR code) and approve the sign-in. No password is stored on this computer.</source>
+            <translation>Escanea este código con la aplicación Steam móvil (Steam &gt; Iniciar sesión con código QR) y aprueba el inicio de sesión. No se guarda ninguna contraseña en este equipo.</translation>
+        </message>
+        <message>
+            <source>Waiting for Steam...</source>
+            <translation>Esperando a Steam...</translation>
+        </message>
+        <message>
+            <source>&amp;Copy</source>
+            <translation>&amp;Copiar</translation>
+        </message>
+        <message>
+            <source>New Code</source>
+            <translation>Nuevo código</translation>
+        </message>
+        <message>
+            <source>&amp;Unlink</source>
+            <translation>&amp;Desvincular</translation>
+        </message>
+        <message>
+            <source>&amp;Close</source>
+            <translation>&amp;Cerrar</translation>
+        </message>
+        <message>
+            <source>Contacting Steam...</source>
+            <translation>Contactando con Steam...</translation>
+        </message>
+        <message>
+            <source>Steam sent a code that could not be displayed. Try a new code.</source>
+            <translation>Steam envió un código que no se pudo mostrar. Prueba con un código nuevo.</translation>
+        </message>
+        <message>
+            <source>Waiting for approval on your phone...</source>
+            <translation>Esperando la aprobación en tu teléfono...</translation>
+        </message>
+        <message>
+            <source>This code expired. Click "New Code" to try again.</source>
+            <translation>Este código ha caducado. Pulsa "Nuevo código" para volver a intentarlo.</translation>
+        </message>
+        <message>
+            <source>Signed in to %1. Card farming can now run without the Steam client.</source>
+            <translation>Sesión iniciada como %1. El farmeo de cromos ya puede funcionar sin el cliente de Steam.</translation>
+        </message>
+        <message>
+            <source>Could not finish linking with Steam. Click "New Code" to try again.</source>
+            <translation>No se pudo completar la vinculación con Steam. Pulsa "Nuevo código" para volver a intentarlo.</translation>
+        </message>
+        <message>
+            <source>Link copied. You can also open it in the Steam app on your phone.</source>
+            <translation>Enlace copiado. También puedes abrirlo en la aplicación Steam de tu teléfono.</translation>
+        </message>
+        <message>
+            <source>Unlink this account? Card farming without the Steam client will stop working until you link it again.</source>
+            <translation>¿Desvincular esta cuenta? El farmeo de cromos sin el cliente de Steam dejará de funcionar hasta que la vincules de nuevo.</translation>
+        </message>
+        <message>
+            <source>The account is no longer linked. Scan a new code to link it again.</source>
+            <translation>La cuenta ya no está vinculada. Escanea un código nuevo para vincularla de nuevo.</translation>
+        </message>
+        <message>
+            <source>this account</source>
+            <translation>esta cuenta</translation>
         </message>
     </context>
 </TS>

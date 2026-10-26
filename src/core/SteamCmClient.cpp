@@ -11,8 +11,11 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QOperatingSystemVersion>
+#include <QRandomGenerator>
+#include <QSysInfo>
 #include <QTimer>
 #include <QUrl>
+#include <QCryptographicHash>
 #include <QtEndian>
 
 #include <zlib.h>
@@ -31,6 +34,10 @@ constexpr quint32 kEmsgClientHeartBeat = 703;
 constexpr quint32 kEmsgClientPlayingSessionState = 9600;
 constexpr quint32 kEmsgClientKickPlayingSession = 9601;
 constexpr quint32 kEmsgClientGamesPlayedWithDataBlob = 5410;
+constexpr quint32 kEmsgClientChangeStatus = 716;
+constexpr quint32 kEmsgServiceMethodResponse = 147;
+constexpr quint32 kEmsgServiceMethodCallFromClient = 151;
+constexpr quint32 kEmsgServiceMethodCallFromClientNonAuthed = 9804;
 
 constexpr quint32 kProtoMask = 0x80000000;
 
@@ -72,6 +79,44 @@ quint32 osType()
     if (os.type() == QOperatingSystemVersion::Windows && os.microVersion() >= 22000)
         return kEosWindows11;
     return kEosWindows10;
+}
+
+// Steam identifies a computer with a small binary key/value blob (root key
+// MessageObject with three SHA-1 "hardware" hashes). It only needs to be stable
+// across runs, so the values are derived from the OS machine id.
+QByteArray machineIdBlob()
+{
+    QByteArray seed = QSysInfo::machineUniqueId();
+    if (seed.isEmpty())
+        seed = QSysInfo::machineHostName().toUtf8();
+    if (seed.isEmpty())
+        seed = QByteArrayLiteral("copper-steam-idler");
+
+    const auto hash = [&seed](const char* salt) {
+        return QCryptographicHash::hash(seed + '|' + salt, QCryptographicHash::Sha1).toHex();
+    };
+
+    QByteArray blob;
+    blob.append('\0');
+    blob.append("MessageObject");
+    blob.append('\0');
+    for (const char* key : {"BB3", "FF2", "3B3"}) {
+        blob.append('\1');
+        blob.append(key);
+        blob.append('\0');
+        blob.append(hash(key));
+        blob.append('\0');
+    }
+    blob.append('\x08');
+    blob.append('\x08');
+    return blob;
+}
+
+quint64 clientInstanceId()
+{
+    // One process = one client instance, like the Steam client itself.
+    static const quint64 id = QRandomGenerator::global()->generate64();
+    return id;
 }
 
 // Decompresses the gzip payload used by CMsgMulti. sizeHint is the exact
@@ -149,6 +194,17 @@ SteamCmClient::~SteamCmClient() = default;
 void SteamCmClient::setAccessToken(const QString& token, quint64 steamId)
 {
     m_accessToken = token;
+    m_refreshToken.clear();
+    m_steamId = steamId;
+}
+
+void SteamCmClient::setRefreshToken(const QString& refreshToken, quint64 steamId)
+{
+    // The CM accepts a refresh token in the same field as an access token, which
+    // is what node-steam-user does. Keep a copy so the web session can be minted
+    // after logon, and because Steam rotates it on every use.
+    m_refreshToken = refreshToken;
+    m_accessToken = refreshToken;
     m_steamId = steamId;
 }
 
@@ -305,6 +361,72 @@ void SteamCmClient::sendMessage(quint32 emsg, const QByteArray& body)
     m_ws->sendBinary(packet);
 }
 
+// A service-method call: the unified Steam services (Authentication, Player,
+// ...) are reachable over the CM with a job header instead of a WebAPI key.
+void SteamCmClient::sendJob(const QString& targetJobName, const QByteArray& body, quint64 jobId,
+                            bool authenticated)
+{
+    proto::Writer header;
+    if (authenticated && m_steamId != 0)
+        header.fixed64Field(1, m_steamId); // steamid
+    if (authenticated && m_sessionId != 0)
+        header.int32Field(2, m_sessionId); // client_sessionid
+    header.fixed64Field(10, jobId);        // jobid_source
+    header.stringField(12, targetJobName); // target_job_name
+    header.varintField(32, 1);             // realm
+
+    const QByteArray headerBytes = header.data();
+
+    QByteArray packet;
+    packet.reserve(8 + headerBytes.size() + body.size());
+
+    const quint32 callEmsg = authenticated ? kEmsgServiceMethodCallFromClient
+                                           : kEmsgServiceMethodCallFromClientNonAuthed;
+    const quint32 rawEmsg = callEmsg | kProtoMask;
+    char emsgBytes[4];
+    qToLittleEndian<quint32>(rawEmsg, emsgBytes);
+    packet.append(emsgBytes, 4);
+
+    char lengthBytes[4];
+    qToLittleEndian<quint32>(static_cast<quint32>(headerBytes.size()), lengthBytes);
+    packet.append(lengthBytes, 4);
+
+    packet.append(headerBytes);
+    packet.append(body);
+
+    m_ws->sendBinary(packet);
+}
+
+void SteamCmClient::requestWebAccessToken()
+{
+    if (m_state != State::LoggedOn) {
+        Logger::log(QStringLiteral("Steam CM: cannot request a web token before logging on"));
+        emit webAccessTokenReceived(QString(), QString());
+        return;
+    }
+
+    // Callers can ask twice in quick succession (logon and the idle pipeline);
+    // one in-flight request is enough, and a second job would overwrite the id
+    // the response is matched against.
+    if (m_webTokenJobId != 0) {
+        Logger::log(QStringLiteral("Steam CM: web session token already requested"));
+        return;
+    }
+
+    // CAuthentication_AccessToken_GenerateForApp_Request.
+    proto::Writer request;
+    const QString& refresh = m_refreshToken.isEmpty() ? m_accessToken : m_refreshToken;
+    request.stringField(1, refresh); // refresh_token
+    if (m_steamId != 0)
+        request.fixed64Field(2, m_steamId); // steamid
+
+    const quint64 jobId = ++m_jobCounter;
+    m_webTokenJobId = jobId;
+    sendJob(QStringLiteral("Authentication.GenerateAccessTokenForApp#1"),
+            request.data(), jobId);
+    Logger::log(QStringLiteral("Steam CM: requested a web session token"));
+}
+
 void SteamCmClient::sendHello()
 {
     proto::Writer body;
@@ -321,7 +443,13 @@ void SteamCmClient::sendLogon()
     body.varintField(5, 1771);                  // client_package_version
     body.stringField(6, QStringLiteral("english")); // client_language
     body.varintField(7, osType());              // client_os_type
-    body.boolField(8, false);                   // should_remember_password
+    body.boolField(8, true);                    // should_remember_password
+    body.varintField(31, 0);                    // launcher_type
+    body.varintField(32, 4);                    // ui_mode
+    body.varintField(33, 2);                    // chat_mode
+    body.bytesField(30, machineIdBlob());       // machine_id
+    body.stringField(96, QStringLiteral("CopperSteamIdler")); // machine_name
+    body.varintField(100, clientInstanceId());  // client_instance_id
     body.boolField(102, true);                  // supports_rate_limit_response
     body.boolField(109, false);                 // is_chrome_os
     if (m_steamId != 0)
@@ -415,13 +543,14 @@ void SteamCmClient::handleMulti(const QByteArray& body)
 
 void SteamCmClient::handleMessage(quint32 emsg, const QByteArray& header, const QByteArray& body)
 {
-    Q_UNUSED(header)
-
     emit messageReceived(emsg, body.size());
 
     switch (emsg) {
     case kEmsgMulti:
         handleMulti(body);
+        break;
+    case kEmsgServiceMethodResponse:
+        handleServiceMethodResponse(header, body);
         break;
     case kEmsgClientLogOnResponse:
         handleLogonResponse(body);
@@ -464,6 +593,7 @@ void SteamCmClient::handleLogonResponse(const QByteArray& body)
     quint32 wire = 0;
 
     int eresult = 2;
+    int extended = 0;
     int heartbeat = 9;
     qint32 sessionId = 0;
     quint64 steamId = 0;
@@ -473,6 +603,10 @@ void SteamCmClient::handleLogonResponse(const QByteArray& body)
             quint64 value = 0;
             reader.readVarint(&value);
             eresult = static_cast<int>(value);
+        } else if (field == 2 && wire == proto::Varint) {
+            quint64 value = 0;
+            reader.readVarint(&value);
+            extended = static_cast<int>(value);
         } else if (field == 3 && wire == proto::Varint) {
             quint64 value = 0;
             reader.readVarint(&value);
@@ -489,7 +623,9 @@ void SteamCmClient::handleLogonResponse(const QByteArray& body)
     }
 
     if (eresult != 1) {
-        fail(QStringLiteral("Steam logon failed: %1").arg(eResultName(eresult)));
+        fail(QStringLiteral("Steam logon failed: %1 (extended %2)")
+                 .arg(eResultName(eresult))
+                 .arg(extended));
         return;
     }
 
@@ -505,9 +641,98 @@ void SteamCmClient::handleLogonResponse(const QByteArray& body)
     Logger::log(QStringLiteral("Steam CM: logged on as %1").arg(m_steamId));
     emit loggedOn(m_steamId);
 
+    // A freshly logged-on session starts out invisible ("Offline" on the profile).
+    // The official client marks itself online right after logon, and being online
+    // is what makes the reported games show up on the profile and in friends'
+    // lists.
+    sendChangeStatus();
+
     // Re-apply whatever was requested before the logon completed.
     if (!m_games.isEmpty())
         setGamesPlayed(m_games);
+
+    // A community session can only be minted over an authenticated connection,
+    // so it is requested once the logon has succeeded.
+    requestWebAccessToken();
+}
+
+void SteamCmClient::handleServiceMethodResponse(const QByteArray& header,
+                                               const QByteArray& body)
+{
+    // Header: jobid_target (11) identifies the call; eresult (13) is its result.
+    quint64 jobId = 0;
+    qint64 eresult = 1;
+
+    proto::Reader headerReader(header);
+    quint32 field = 0;
+    quint32 wire = 0;
+    while (headerReader.nextTag(&field, &wire)) {
+        if (field == 11) {
+            // Steam sends jobid_target as a fixed64.
+            if (wire == proto::Fixed64) {
+                quint64 value = 0;
+                if (headerReader.readFixed64(&value))
+                    jobId = value;
+            } else if (wire == proto::Varint) {
+                headerReader.readVarint(&jobId);
+            } else if (!headerReader.skip(wire)) {
+                break;
+            }
+        } else if (field == 13 && wire == proto::Varint) {
+            quint64 value = 0;
+            headerReader.readVarint(&value);
+            eresult = static_cast<qint64>(value);
+        } else if (!headerReader.skip(wire)) {
+            break;
+        }
+    }
+
+    const bool isWebToken = m_webTokenJobId != 0 && jobId == m_webTokenJobId;
+    if (!isWebToken)
+        return;
+
+    m_webTokenJobId = 0;
+
+    if (eresult != 1) {
+        Logger::log(QStringLiteral("Steam CM: web session token refused (%1)")
+                        .arg(eResultName(static_cast<int>(eresult))));
+        emit webAccessTokenReceived(QString(), QString());
+        return;
+    }
+
+    // CAuthentication_AccessToken_GenerateForApp_Response.
+    QString accessToken;
+    QString refreshToken;
+    proto::Reader reader(body);
+    while (reader.nextTag(&field, &wire)) {
+        if (wire == proto::LengthDelimited) {
+            QByteArray value;
+            if (!reader.readBytes(&value))
+                break;
+            if (field == 1)
+                accessToken = QString::fromUtf8(value);
+            else if (field == 2)
+                refreshToken = QString::fromUtf8(value);
+        } else if (!reader.skip(wire)) {
+            break;
+        }
+    }
+
+    if (accessToken.isEmpty()) {
+        Logger::log(QStringLiteral("Steam CM: web session token missing from the response"));
+        emit webAccessTokenReceived(QString(), QString());
+        return;
+    }
+
+    // Steam rotates the long-lived token on every use; keep the newest copy so
+    // the saved credentials stay valid.
+    if (!refreshToken.isEmpty()) {
+        m_refreshToken = refreshToken;
+        emit refreshTokenRotated(refreshToken);
+    }
+
+    Logger::log(QStringLiteral("Steam CM: web session token received"));
+    emit webAccessTokenReceived(accessToken, refreshToken);
 }
 
 void SteamCmClient::handleLoggedOff(const QByteArray& body)
@@ -537,8 +762,17 @@ void SteamCmClient::handleLoggedOff(const QByteArray& body)
 // Games played
 // ---------------------------------------------------------------------------
 
-void SteamCmClient::setGamesPlayed(const QList<quint32>& appIds)
+// CMsgClientChangeStatus: persona_state in field 1, player_name in field 2.
+// Online is 1; the name is left out so Steam keeps the account's profile name.
+void SteamCmClient::sendChangeStatus()
 {
+    proto::Writer body;
+    body.varintField(1, 1); // persona_state = Online
+    sendMessage(kEmsgClientChangeStatus, body.data());
+    Logger::log(QStringLiteral("Steam CM: announced the session as online"));
+}
+
+void SteamCmClient::setGamesPlayed(const QList<quint32>& appIds){
     m_games = appIds;
 
     if (m_state != State::LoggedOn) {

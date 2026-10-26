@@ -13,8 +13,9 @@ class SteamCmClient;
 //   Client      spawns one copper-steam-idle helper per AppID, so the Steam
 //               client has to be running. This is the historical behaviour.
 //   Standalone  keeps one Steam Connection Manager session open and reports the
-//               selected games as "played". It authenticates with the saved web
-//               session, so the Steam client does not need to be running.
+//               selected games as "played". It logs on with the refresh token
+//               from the QR link, so neither the Steam client nor a website
+//               sign-in is needed.
 //
 // Callers do not need to know which backend is active; Badge and MainWindow go
 // through this class instead of talking to ProcessManager directly.
@@ -46,20 +47,27 @@ public:
     QList<int> idlingAppIds() const;
     void killRogueHelpers();
 
-    // Standalone session lifecycle. startStandalone() mints a token (blocking,
-    // one HTTPS request) and begins the asynchronous CM handshake; the session
+    // Standalone session lifecycle. startStandalone() logs on to the CM with the
+    // linked account's refresh token; the handshake is asynchronous. The session
     // is usable once standaloneReady() is true and standaloneStateChanged() has
-    // been emitted. Returns false only when no token could be obtained.
+    // been emitted. Returns false only when there is no linked account.
     bool startStandalone();
     void stopStandalone();
     bool standaloneReady() const { return m_standaloneReady; }
     bool standaloneConnecting() const { return m_connecting; }
     QString lastError() const { return m_lastError; }
 
+    // Asks Steam for a fresh community (web) access token over the CM session.
+    // The token behind the steamLoginSecure cookie expires daily, so this is how
+    // the app recovers without making the user link or sign in again.
+    void refreshWebSession();
+
 signals:
     // Emitted whenever the standalone session becomes ready or drops.
     void standaloneStateChanged(bool ready);
     void standaloneFailed(const QString& reason);
+    // A fresh community session has been installed; it is safe to load badges.
+    void webSessionReady();
 
 private:
     explicit IdleBackend(QObject* parent = nullptr);

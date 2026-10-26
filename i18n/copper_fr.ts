@@ -607,6 +607,23 @@ Veuillez réessayer.</translation>
             <source>No Steam client needed (standalone mode)</source>
             <translation>Aucun client Steam requis (mode autonome)</translation>
         </message>
+        <message>
+            <source>Link Steam &amp;Account...</source>
+            <translation>Lier le &amp;compte Steam...</translation>
+        </message>
+        <message>
+            <source>Account linked. Card farming can now run without the Steam client.</source>
+            <translation>Compte lié. Le farming de cartes peut désormais fonctionner sans le client Steam.</translation>
+        </message>
+        <message>
+            <source>Account linked. Set the farming method to "Standalone" or "Automatic" to farm without the Steam client.</source>
+            <translation>Compte lié. Choisissez la méthode de farming « Autonome » ou « Automatique » pour farmer sans le client Steam.</translation>
+        </message>
+        <message>
+            <source>Farming without the Steam client needs a linked account: use File &gt; Link Steam Account.</source>
+            <translation>Le farming sans le client Steam nécessite un compte lié : utilisez Fichier &gt; Lier le compte Steam.</translation>
+        </message>
+
     </context>
     <context>
         <name>QObject</name>
@@ -977,6 +994,81 @@ Réinstallez ou exécutez l'étape de déploiement.</translation>
             <location filename="../src/ui/WhitelistDialog.cpp" line="63" />
             <source>Please enter a valid App ID.</source>
             <translation>Veuillez saisir un ID d'application valide.</translation>
+        </message>
+    </context>
+    <context>
+        <name>QrLoginDialog</name>
+        <message>
+            <source>Link Steam Account</source>
+            <translation>Lier le compte Steam</translation>
+        </message>
+        <message>
+            <source>Farm cards without the Steam client</source>
+            <translation>Farmer des cartes sans le client Steam</translation>
+        </message>
+        <message>
+            <source>Scan this code with the Steam mobile app (Steam &gt; Sign in with QR code) and approve the sign-in. No password is stored on this computer.</source>
+            <translation>Scannez ce code avec l'application Steam mobile (Steam &gt; Se connecter avec un code QR) et approuvez la connexion. Aucun mot de passe n'est enregistré sur cet ordinateur.</translation>
+        </message>
+        <message>
+            <source>Waiting for Steam...</source>
+            <translation>En attente de Steam...</translation>
+        </message>
+        <message>
+            <source>&amp;Copy</source>
+            <translation>&amp;Copier</translation>
+        </message>
+        <message>
+            <source>New Code</source>
+            <translation>Nouveau code</translation>
+        </message>
+        <message>
+            <source>&amp;Unlink</source>
+            <translation>&amp;Dissocier</translation>
+        </message>
+        <message>
+            <source>&amp;Close</source>
+            <translation>&amp;Fermer</translation>
+        </message>
+        <message>
+            <source>Contacting Steam...</source>
+            <translation>Connexion à Steam...</translation>
+        </message>
+        <message>
+            <source>Steam sent a code that could not be displayed. Try a new code.</source>
+            <translation>Steam a envoyé un code impossible à afficher. Essayez un nouveau code.</translation>
+        </message>
+        <message>
+            <source>Waiting for approval on your phone...</source>
+            <translation>En attente de validation sur votre téléphone...</translation>
+        </message>
+        <message>
+            <source>This code expired. Click "New Code" to try again.</source>
+            <translation>Ce code a expiré. Cliquez sur « Nouveau code » pour réessayer.</translation>
+        </message>
+        <message>
+            <source>Signed in to %1. Card farming can now run without the Steam client.</source>
+            <translation>Connecté à %1. Le farming de cartes peut désormais fonctionner sans le client Steam.</translation>
+        </message>
+        <message>
+            <source>Could not finish linking with Steam. Click "New Code" to try again.</source>
+            <translation>Impossible de terminer la liaison avec Steam. Cliquez sur « Nouveau code » pour réessayer.</translation>
+        </message>
+        <message>
+            <source>Link copied. You can also open it in the Steam app on your phone.</source>
+            <translation>Lien copié. Vous pouvez aussi l'ouvrir dans l'application Steam sur votre téléphone.</translation>
+        </message>
+        <message>
+            <source>Unlink this account? Card farming without the Steam client will stop working until you link it again.</source>
+            <translation>Dissocier ce compte ? Le farming de cartes sans le client Steam cessera de fonctionner jusqu'à ce que vous le liiez à nouveau.</translation>
+        </message>
+        <message>
+            <source>The account is no longer linked. Scan a new code to link it again.</source>
+            <translation>Le compte n'est plus lié. Scannez un nouveau code pour le lier à nouveau.</translation>
+        </message>
+        <message>
+            <source>this account</source>
+            <translation>ce compte</translation>
         </message>
     </context>
 </TS>

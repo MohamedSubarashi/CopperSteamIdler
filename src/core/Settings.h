@@ -25,10 +25,26 @@ public:
     QString steamLoginSecure() const { return m_s.value("steamLoginSecure").toString(); }
     void setSteamLoginSecure(const QString& v) { m_s.setValue("steamLoginSecure", v); }
 
+    // Client tokens obtained from the QR sign-in (see SteamAuth). The refresh
+    // token is long-lived and has a client audience, which is what the CM
+    // protocol accepts; the access token is minted from it and expires daily.
+    // A website session can never be turned into one of these.
+    QString clientRefreshToken() const { return m_s.value("clientRefreshToken").toString(); }
+    void setClientRefreshToken(const QString& v) { m_s.setValue("clientRefreshToken", v); }
+
+    QString clientAccessToken() const { return m_s.value("clientAccessToken").toString(); }
+    void setClientAccessToken(const QString& v) { m_s.setValue("clientAccessToken", v); }
+
+    QString clientAccountName() const { return m_s.value("clientAccountName").toString(); }
+    void setClientAccountName(const QString& v) { m_s.setValue("clientAccountName", v); }
+
     QString myProfileURL() const { return m_s.value("myProfileURL").toString(); }
     void setMyProfileURL(const QString& v) { m_s.setValue("myProfileURL", v); }
 
     bool hasSession() const { return !steamLoginSecure().isEmpty(); }
+
+    // True when the account has been linked for standalone farming.
+    bool hasClientToken() const { return !clientRefreshToken().isEmpty(); }
 
     // General ------------------------------------------------------------
     bool minToTray() const { return m_s.value("minToTray", false).toBool(); }

@@ -45,6 +45,7 @@ private slots:
     void onResume();
     void onSkip();
     void onQuickLogin();
+    void onLinkAccount();
     void onSignOut();
     void onOpenSettings();
     void onOpenBlacklist();
@@ -154,6 +155,7 @@ private:
 
     // ---- actions -----------------------------------------------------
     QAction* m_actQuickLogin = nullptr;
+    QAction* m_actLinkAccount = nullptr;
     QAction* m_actSettings = nullptr;
     QAction* m_actBlacklist = nullptr;
     QAction* m_actWhitelist = nullptr;
