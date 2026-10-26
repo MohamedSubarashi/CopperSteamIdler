@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(CopperSteamIdler
-    VERSION 0.3.0
+    VERSION 0.4.0
     DESCRIPTION "Copper Steam Idler - a Qt6 port of Idle Master Extended"
     LANGUAGES CXX)
 
