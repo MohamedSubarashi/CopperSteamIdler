@@ -67,6 +67,13 @@ public:
     void setLanguage(const QString& v) { m_s.setValue("language", v); }
 
     // Idling behaviour ---------------------------------------------------
+    // Backend used to farm cards:
+    //   "auto"       = standalone when a saved Steam session exists, else client
+    //   "client"     = copper-steam-idle helpers (requires the Steam client)
+    //   "standalone" = direct Steam CM session (no Steam client needed)
+    QString farmingMethod() const { return m_s.value("farmingMethod", "auto").toString(); }
+    void setFarmingMethod(const QString& v) { m_s.setValue("farmingMethod", v); }
+
     bool fastMode() const { return m_s.value("fastMode", true).toBool(); }
     void setFastMode(bool v) { m_s.setValue("fastMode", v); }
 

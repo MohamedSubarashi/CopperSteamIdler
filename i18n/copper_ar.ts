@@ -591,6 +591,22 @@ Please try again.</source>
             <source>No image available</source>
             <translation>لا توجد صورة متاحة</translation>
         </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="806" />
+            <source>Connecting to Steam...</source>
+            <translation>جارٍ الاتصال بـ Steam…</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="121" />
+            <location filename="../src/ui/MainWindow.cpp" line="818" />
+            <source>Could not connect to Steam: %1</source>
+            <translation>تعذّر الاتصال بـ Steam: %1</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="431" />
+            <source>No Steam client needed (standalone mode)</source>
+            <translation>لا حاجة إلى عميل Steam (الوضع المستقل)</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -865,6 +881,36 @@ Reinstall or run the deploy step.</source>
             <location filename="../src/ui/SettingsDialog.cpp" line="270" />
             <source>Are you sure you want your computer to shut down when idling completes?</source>
             <translation>هل أنت متأكد من رغبتك في إيقاف تشغيل الحاسوب عند اكتمال التبطيل؟</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="54" />
+            <source>Automatic (no Steam client needed)</source>
+            <translation>تلقائي (لا حاجة إلى عميل Steam)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="52" />
+            <source>Farming method</source>
+            <translation>طريقة التبطيل</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="55" />
+            <source>Standalone (no Steam client needed)</source>
+            <translation>مستقل (لا حاجة إلى عميل Steam)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="59" />
+            <source>Standalone farms cards by connecting to Steam directly, so the Steam client does not have to be running.</source>
+            <translation>يجمع الوضع المستقل البطاقات عبر الاتصال بـ Steam مباشرةً، لذا لا يلزم تشغيل عميل Steam.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="66" />
+            <source>Standalone mode signs in with your saved Steam session.</source>
+            <translation>يسجّل الوضع المستقل الدخول باستخدام جلسة Steam المحفوظة.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="57" />
+            <source>Steam client required</source>
+            <translation>يلزم عميل Steam</translation>
         </message>
     </context>
     <context>

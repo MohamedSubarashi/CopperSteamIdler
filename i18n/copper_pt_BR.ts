@@ -591,6 +591,22 @@ Tente novamente.</translation>
             <source>No image available</source>
             <translation>Nenhuma imagem disponível</translation>
         </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="806" />
+            <source>Connecting to Steam...</source>
+            <translation>Conectando ao Steam…</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="121" />
+            <location filename="../src/ui/MainWindow.cpp" line="818" />
+            <source>Could not connect to Steam: %1</source>
+            <translation>Não foi possível conectar ao Steam: %1</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="431" />
+            <source>No Steam client needed (standalone mode)</source>
+            <translation>O cliente Steam não é necessário (modo autônomo)</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -865,6 +881,36 @@ Reinstale ou execute a etapa de implantação.</translation>
             <location filename="../src/ui/SettingsDialog.cpp" line="270" />
             <source>Are you sure you want your computer to shut down when idling completes?</source>
             <translation>Tem certeza de que deseja desligar o computador quando o idling terminar?</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="54" />
+            <source>Automatic (no Steam client needed)</source>
+            <translation>Automático (o cliente Steam não é necessário)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="52" />
+            <source>Farming method</source>
+            <translation>Método de idling</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="55" />
+            <source>Standalone (no Steam client needed)</source>
+            <translation>Autônomo (o cliente Steam não é necessário)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="59" />
+            <source>Standalone farms cards by connecting to Steam directly, so the Steam client does not have to be running.</source>
+            <translation>O idling autônomo obtém cartas conectando-se diretamente ao Steam, então o cliente Steam não precisa estar em execução.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="66" />
+            <source>Standalone mode signs in with your saved Steam session.</source>
+            <translation>O modo autônomo entra com sua sessão Steam salva.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="57" />
+            <source>Steam client required</source>
+            <translation>O cliente Steam é necessário</translation>
         </message>
     </context>
     <context>

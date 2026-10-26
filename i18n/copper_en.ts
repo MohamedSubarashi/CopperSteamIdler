@@ -591,6 +591,22 @@ Please try again.</translation>
             <source>No image available</source>
             <translation>No image available</translation>
         </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="806" />
+            <source>Connecting to Steam...</source>
+            <translation>Connecting to Steam...</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="121" />
+            <location filename="../src/ui/MainWindow.cpp" line="818" />
+            <source>Could not connect to Steam: %1</source>
+            <translation>Could not connect to Steam: %1</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/MainWindow.cpp" line="431" />
+            <source>No Steam client needed (standalone mode)</source>
+            <translation>No Steam client needed (standalone mode)</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -865,6 +881,36 @@ Reinstall or run the deploy step.</translation>
             <location filename="../src/ui/SettingsDialog.cpp" line="270" />
             <source>Are you sure you want your computer to shut down when idling completes?</source>
             <translation>Are you sure you want your computer to shut down when idling completes?</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="54" />
+            <source>Automatic (no Steam client needed)</source>
+            <translation>Automatic (no Steam client needed)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="52" />
+            <source>Farming method</source>
+            <translation>Farming method</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="55" />
+            <source>Standalone (no Steam client needed)</source>
+            <translation>Standalone (no Steam client needed)</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="59" />
+            <source>Standalone farms cards by connecting to Steam directly, so the Steam client does not have to be running.</source>
+            <translation>Standalone farms cards by connecting to Steam directly, so the Steam client does not have to be running.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="66" />
+            <source>Standalone mode signs in with your saved Steam session.</source>
+            <translation>Standalone mode signs in with your saved Steam session.</translation>
+        </message>
+        <message>
+            <location filename="../src/ui/SettingsDialog.cpp" line="57" />
+            <source>Steam client required</source>
+            <translation>Steam client required</translation>
         </message>
     </context>
     <context>

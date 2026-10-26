@@ -2,6 +2,7 @@
 
 #include "../core/Badge.h"
 #include "../core/HttpClient.h"
+#include "../core/IdleBackend.h"
 #include "../core/Logger.h"
 #include "../core/PowerManager.h"
 #include "../core/ProcessManager.h"
@@ -106,6 +107,20 @@ MainWindow::MainWindow(QWidget* parent)
 
     Logger::log(QStringLiteral("Copper Steam Idler started"));
 
+    // A standalone session opens asynchronously; when it becomes ready, pick the
+    // idle cycle back up where it left off.
+    connect(&IdleBackend::instance(), &IdleBackend::standaloneStateChanged, this,
+            [this](bool ready) {
+                if (ready && !m_idlingStarted)
+                    startIdle();
+            });
+    connect(&IdleBackend::instance(), &IdleBackend::standaloneFailed, this,
+            [this](const QString& reason) {
+                if (m_idlingStarted)
+                    return;
+                m_lblCurrentStatus->setText(tr("Could not connect to Steam: %1").arg(reason));
+            });
+
     onCheckSteam();
     onCheckCookieData();
     m_tmrCheckSteam->start();
@@ -115,7 +130,10 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-    ProcessManager::instance().stopAll();
+    // Close the standalone CM session first so Steam stops showing this account
+    // in-game, then make sure no helper process is left behind.
+    IdleBackend::instance().stopAll();
+    IdleBackend::instance().stopStandalone();
     clearBadges();
 }
 
@@ -403,9 +421,16 @@ void MainWindow::onCheckSteam()
 {
     Settings& s = Settings::instance();
     const bool running = ProcessManager::isProcessRunning(QStringLiteral("steam.exe"));
-    m_isSteamReady = running || s.ignoreClient();
+    const bool standalone = IdleBackend::resolveMode() == IdleBackend::Mode::Standalone;
 
-    if (s.ignoreClient()) {
+    // In standalone mode the Steam client is not needed at all: the app holds its
+    // own connection to Steam's CM network.
+    m_isSteamReady = running || s.ignoreClient() || standalone;
+
+    if (standalone) {
+        m_lblSteamStatus->setText(tr("No Steam client needed (standalone mode)"));
+        m_picSteamStatus->setPixmap(Theme::statusIcon(true).pixmap(16, 16));
+    } else if (s.ignoreClient()) {
         m_lblSteamStatus->setText(tr("Steam client status ignored"));
         m_picSteamStatus->setPixmap(Theme::statusIcon(true).pixmap(16, 16));
     } else if (running) {
@@ -416,7 +441,7 @@ void MainWindow::onCheckSteam()
         m_picSteamStatus->setPixmap(Theme::statusIcon(false).pixmap(16, 16));
     }
 
-    m_tmrCheckSteam->setInterval(running ? 5000 : 500);
+    m_tmrCheckSteam->setInterval((running || standalone) ? 5000 : 500);
 
     m_actPause->setEnabled(m_isSteamReady);
     m_actSkip->setEnabled(m_isSteamReady);
@@ -425,6 +450,7 @@ void MainWindow::onCheckSteam()
 void MainWindow::onCheckCookieData()
 {
     Settings& s = Settings::instance();
+    const bool wasConnected = m_isCookieReady;
     const bool connected = s.hasSession();
     m_isCookieReady = connected;
 
@@ -452,6 +478,11 @@ void MainWindow::onCheckCookieData()
     } else if (!s.showUsername()) {
         m_lblSignedOnAs->hide();
     }
+
+    // A fresh sign-in should resume the startup pipeline, which may already have
+    // stopped because it had no session to work with.
+    if (!wasConnected && connected && !m_idlingStarted)
+        m_tmrReadyToGo->start();
 }
 
 void MainWindow::onReadyToGo()
@@ -514,7 +545,7 @@ void MainWindow::onHealthCheck()
     if (m_currentBadge) {
         if (!m_currentBadge->inIdle())
             m_currentBadge->idle();
-    } else if (ProcessManager::instance().idlingCount() == 0 && !canIdleBadges().isEmpty()) {
+    } else if (IdleBackend::instance().idlingCount() == 0 && !canIdleBadges().isEmpty()) {
         updateIdleProcesses();
     }
 }
@@ -759,9 +790,37 @@ Badge* MainWindow::badgeForAppId(int appId) const
 void MainWindow::startIdle()
 {
     Settings& s = Settings::instance();
-    ProcessManager::instance().killRogueHelpers();
+    IdleBackend& backend = IdleBackend::instance();
+    const IdleBackend::Mode mode = IdleBackend::resolveMode();
+    backend.setMode(mode);
+    backend.killRogueHelpers();
 
-    if (!s.hasSession() || !m_isSteamReady) {
+    if (!s.hasSession()) {
+        resetClientStatus();
+        return;
+    }
+
+    // Standalone mode has to be logged on before it can report any game as
+    // played, otherwise the user would see "in game" while nothing happens.
+    if (mode == IdleBackend::Mode::Standalone && !backend.standaloneReady()) {
+        m_lblCurrentStatus->setText(tr("Connecting to Steam..."));
+        if (backend.startStandalone())
+            return; // resumed when standaloneStateChanged(true) arrives
+
+        // No access token: fall back to the helper processes if Steam is running,
+        // otherwise say why nothing can start.
+        if (ProcessManager::isProcessRunning(QStringLiteral("steam.exe"))) {
+            Logger::log(QStringLiteral("Standalone farming unavailable (%1); using the Steam client")
+                            .arg(backend.lastError()));
+            backend.setMode(IdleBackend::Mode::Client);
+        } else {
+            m_lblCurrentStatus->setText(
+                tr("Could not connect to Steam: %1").arg(backend.lastError()));
+            return;
+        }
+    }
+
+    if (!m_isSteamReady && backend.mode() == IdleBackend::Mode::Client) {
         resetClientStatus();
         return;
     }
@@ -886,7 +945,7 @@ void MainWindow::startMultipleIdle()
     updateIdleProcesses();
     showInterruptiveButtons();
 
-    if (ProcessManager::instance().idlingCount() > 0) {
+    if (IdleBackend::instance().idlingCount() > 0) {
         scheduleNextDropCheck(int(Settings::instance().simultaneousMinutes()) * 60);
         m_tmrCardDropCheck->start();
     }
@@ -896,7 +955,7 @@ void MainWindow::updateIdleProcesses()
 {
     const QList<Badge*> badges = canIdleBadges();
     const bool fast = Settings::instance().fastMode();
-    ProcessManager& pm = ProcessManager::instance();
+    IdleBackend& pm = IdleBackend::instance();
 
     for (Badge* badge : badges) {
         if (fast || badge->alwaysIdle()) {
@@ -934,7 +993,7 @@ void MainWindow::startMultipleIdleFastMode()
 
 void MainWindow::startSoloIdleFastMode()
 {
-    ProcessManager::instance().stopAll();
+    IdleBackend::instance().stopAll();
     showSpinner(m_picIdleStatus, true);
     m_lblCurrentStatus->setText(tr("Currently in-game"));
     m_lblCurrentStatus->show();
@@ -970,7 +1029,8 @@ void MainWindow::nextIdle()
     stopIdle();
 
     Settings& s = Settings::instance();
-    if (!s.hasSession() || !m_isSteamReady) {
+    const bool standalone = IdleBackend::instance().mode() == IdleBackend::Mode::Standalone;
+    if (!s.hasSession() || (!m_isSteamReady && !standalone)) {
         resetClientStatus();
         return;
     }
@@ -987,7 +1047,7 @@ void MainWindow::stopIdle()
 {
     m_tmrCardDropCheck->stop();
 
-    ProcessManager::instance().stopAll();
+    IdleBackend::instance().stopAll();
 
     m_currentBadge = nullptr;
     m_idlingStarted = false;
@@ -1049,7 +1109,7 @@ void MainWindow::performDoneAction()
 void MainWindow::updateStateInfo()
 {
     const int games = gamesRemaining();
-    const int idling = ProcessManager::instance().idlingCount();
+    const int idling = IdleBackend::instance().idlingCount();
 
     m_lblIdle->setText(tr("%1 games left to idle, %2 idle now.").arg(games).arg(idling));
     m_lblIdle->setVisible(games > 0);
@@ -1371,6 +1431,9 @@ void MainWindow::resetClientStatus()
     HttpClient::instance().clearCookies();
 
     stopIdle();
+    // Signing out (or losing the session) must also drop the CM connection: its
+    // access token came from the session that just went away.
+    IdleBackend::instance().stopStandalone();
     clearBadges();
 
     m_isCookieReady = false;

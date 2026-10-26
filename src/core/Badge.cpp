@@ -1,7 +1,7 @@
 #include "Badge.h"
 
 #include "HttpClient.h"
-#include "ProcessManager.h"
+#include "IdleBackend.h"
 #include "SteamHtml.h"
 
 #include <QUrl>
@@ -19,17 +19,17 @@ QString Badge::stringId() const
 
 bool Badge::inIdle() const
 {
-    return ProcessManager::instance().isIdling(m_appId);
+    return IdleBackend::instance().isIdling(m_appId);
 }
 
 void Badge::idle()
 {
-    ProcessManager::instance().startIdle(m_appId);
+    IdleBackend::instance().startIdle(m_appId);
 }
 
 void Badge::stopIdle()
 {
-    ProcessManager::instance().stopIdle(m_appId);
+    IdleBackend::instance().stopIdle(m_appId);
 }
 
 Badge::DropStatus Badge::refreshDrops(const QString& profileUrl)

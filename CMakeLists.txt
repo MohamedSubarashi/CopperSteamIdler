@@ -57,6 +57,8 @@ set(APP_SOURCES
     src/core/SteamHtml.cpp
     src/core/ProcessManager.h
     src/core/ProcessManager.cpp
+    src/core/IdleBackend.h
+    src/core/IdleBackend.cpp
     src/core/PowerManager.h
     src/core/PowerManager.cpp
     src/core/Badge.h

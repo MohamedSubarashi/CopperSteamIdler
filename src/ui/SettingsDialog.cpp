@@ -48,6 +48,26 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     generalLayout->addWidget(m_chkPreventSleep);
     generalLayout->addWidget(m_chkIdleOnlyPlayed);
 
+    auto* methodRow = new QHBoxLayout;
+    methodRow->addWidget(new QLabel(tr("Farming method"), general));
+    m_cboFarmingMethod = new QComboBox(general);
+    m_cboFarmingMethod->addItem(tr("Automatic (no Steam client needed)"), QStringLiteral("auto"));
+    m_cboFarmingMethod->addItem(tr("Standalone (no Steam client needed)"),
+                                QStringLiteral("standalone"));
+    m_cboFarmingMethod->addItem(tr("Steam client required"), QStringLiteral("client"));
+    m_cboFarmingMethod->setToolTip(
+        tr("Standalone farms cards by connecting to Steam directly, so the Steam client "
+           "does not have to be running."));
+    methodRow->addWidget(m_cboFarmingMethod);
+    methodRow->addStretch();
+    generalLayout->addLayout(methodRow);
+
+    auto* methodNote =
+        new QLabel(tr("Standalone mode signs in with your saved Steam session."), general);
+    methodNote->setWordWrap(true);
+    methodNote->setEnabled(false);
+    generalLayout->addWidget(methodNote);
+
     auto* doneRow = new QHBoxLayout;
     doneRow->addWidget(new QLabel(tr("When idling completes"), general));
     m_cboDoneAction = new QComboBox(general);
@@ -203,6 +223,7 @@ void SettingsDialog::loadSettings()
     m_chkIdleOnlyPlayed->setChecked(s.idleOnlyPlayed());
 
     m_cboDoneAction->setCurrentIndex(m_cboDoneAction->findData(s.doneAction()));
+    m_cboFarmingMethod->setCurrentIndex(qMax(0, m_cboFarmingMethod->findData(s.farmingMethod())));
     m_spnSimultaneous->setValue(int(s.simultaneousMinutes()));
     m_spnTargetHours->setValue(s.targetHours());
 
@@ -260,6 +281,7 @@ void SettingsDialog::accept()
     s.setNoSleep(m_chkPreventSleep->isChecked());
     s.setIdleOnlyPlayed(m_chkIdleOnlyPlayed->isChecked());
     s.setLanguage(m_cboLanguage->currentData().toString());
+    s.setFarmingMethod(m_cboFarmingMethod->currentData().toString());
     s.setSimultaneousMinutes(uint(m_spnSimultaneous->value()));
     s.setTargetHours(m_spnTargetHours->value());
 

@@ -30,6 +30,7 @@ private:
     QCheckBox* m_chkPreventSleep = nullptr;
     QCheckBox* m_chkIdleOnlyPlayed = nullptr;
     QComboBox* m_cboDoneAction = nullptr;
+    QComboBox* m_cboFarmingMethod = nullptr;
     QSpinBox* m_spnSimultaneous = nullptr;
     QDoubleSpinBox* m_spnTargetHours = nullptr;
     QComboBox* m_cboLanguage = nullptr;
